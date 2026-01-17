@@ -110,37 +110,38 @@ export default function RecordDetail({ surveyId, onClose }) {
     if (!surveyId) return null
 
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors">
-            {/* v3.1 Precision Header: Normalized Heights & Clean Pills */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/80 backdrop-blur-xl relative z-20 shrink-0">
-                <div className="flex items-center gap-3 h-12">
-                    {/* Survey ID */}
-                    <h1 className="text-3xl font-display font-black text-slate-950 dark:text-white tracking-tighter tabular-nums drop-shadow-sm shrink-0 leading-none mr-1">
+        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors font-sans">
+            {/* v4.7 Monolith Header: High-Precision Uniformity */}
+            <div className="bg-white dark:bg-slate-900 relative z-20 shrink-0 overflow-hidden">
+                <div className="flex items-stretch h-14 border-b border-slate-200 dark:border-white/5">
+                    {/* ID Segment - Matching Close Button Style with Black Text */}
+                    <div className="px-6 flex items-center bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shrink-0 font-display font-black tracking-tighter tabular-nums leading-none text-xl md:text-2xl">
                         {surveyId}
-                    </h1>
+                    </div>
 
-                    <div className="flex-1 flex items-center gap-2 min-w-0 h-full">
-                        {/* Surveyor Name Pill - Dominant Width */}
-                        <div className="flex-[2] min-w-0 h-full flex items-center px-4 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                            <span className="text-[10px] md:text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest leading-tight truncate">
+                    {/* Metadata Segment - Clean No-Margin Fill */}
+                    <div className="flex-1 flex items-center px-4 gap-4 min-w-0 bg-slate-50/10 dark:bg-slate-900 border-x border-slate-200 dark:border-white/10">
+                        <div className="flex-1 min-w-0">
+                            <span className="text-[10px] md:text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-tight overflow-hidden break-words block max-h-8">
                                 {data?.surveyor_name || 'AUTO'}
                             </span>
                         </div>
 
-                        {/* Combined Date & Time Pill - Compact Width */}
-                        <div className="w-24 md:w-28 h-full flex flex-col justify-center items-center px-2 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/5 shrink-0 shadow-sm overflow-hidden">
-                            <span className="text-[9px] font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none mb-0.5">
+                        {/* Date/Time - Minimal Indigo Accents */}
+                        <div className="flex flex-col items-end shrink-0 border-l border-slate-200 dark:border-white/10 pl-4 h-8 justify-center">
+                            <span className="text-[11px] font-black text-indigo-500 tabular-nums leading-none mb-0.5">
                                 {data?.survey_date || 'N/A'}
                             </span>
-                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 tabular-nums leading-none">
+                            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tabular-nums leading-none">
                                 {data?.survey_time || '--:--'}
                             </span>
                         </div>
                     </div>
 
+                    {/* Integrated Close Action - Uniform Style */}
                     <button
                         onClick={onClose}
-                        className="h-12 w-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 transition-all active:scale-90 border border-slate-200 dark:border-white/5 shrink-0"
+                        className="w-14 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all active:scale-95 shrink-0"
                     >
                         <X size={20} />
                     </button>
@@ -149,259 +150,252 @@ export default function RecordDetail({ surveyId, onClose }) {
 
             {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-xs text-slate-500 font-medium">Reconstructing Records...</span>
+                    <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-800 border-t-indigo-500 rounded-full animate-spin"></div>
+                    <span className="text-xs text-slate-500 font-medium font-display tracking-widest uppercase">Precision Tuning...</span>
                 </div>
             ) : data ? (
                 <>
-                    <div className="flex-1 overflow-y-auto scrollbar-premium">
-                        {/* v2.6 Modern Overlay Image (Regional info on image top-right) */}
-                        <div className="p-4">
-                            <div
-                                className="relative h-48 md:h-64 rounded-panel overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/5 shadow-2zl group cursor-zoom-in"
-                                onClick={() => setIsGalleryOpen(true)}
-                            >
-                                <AnimatePresence mode="wait">
-                                    {data.image_urls && data.image_urls.length > 0 ? (
-                                        <>
-                                            <motion.img
-                                                key={activeImage}
-                                                src={data.image_urls[activeImage]}
-                                                initial={{ opacity: 0, scale: 1.1 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0 }}
-                                                transition={{ duration: 0.4 }}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
+                    <div className="flex-1 overflow-y-auto scrollbar-hide no-scrollbar">
+                        {/* v4.7 Full-Width Seamless Hero */}
+                        <div
+                            className="relative h-64 md:h-80 overflow-hidden bg-white dark:bg-slate-900 group cursor-zoom-in"
+                            onClick={() => setIsGalleryOpen(true)}
+                        >
+                            <AnimatePresence mode="wait">
+                                {data.image_urls && data.image_urls.length > 0 ? (
+                                    <>
+                                        <motion.img
+                                            key={activeImage}
+                                            src={data.image_urls[activeImage]}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="w-full h-full object-cover"
+                                        />
 
-                                            {/* Overlay Gradient */}
-                                            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
-                                            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
-
-                                            {/* Overlay Regional Hierarchy (Top Right) */}
-                                            <div className="absolute top-3 right-3 flex flex-col items-end pointer-events-none">
-                                                <div className="bg-black/30 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 text-right">
-                                                    <span className="block text-[8px] font-black text-white/70 uppercase tracking-widest leading-none">
-                                                        {data?.city_district}
-                                                    </span>
-                                                    <span className="block text-[11px] md:text-sm font-black text-white uppercase tracking-tight leading-tight mt-0.5 max-w-[140px] break-words">
-                                                        {shortenAreaName(data?.uc_name, data?.city_district, data?.tehsil)}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Overlay Identity Card (Bottom Left) */}
-                                            <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-1 text-white pointer-events-none">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="bg-indigo-500/90 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-white/20">
-                                                        IMAGE {activeImage + 1} / {data.image_urls.length}
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-0.5 mt-1">
-                                                    <h3 className="text-sm font-black tracking-tight drop-shadow-md truncate">{data.consumer_name || 'Anonymous Consumer'}</h3>
-                                                    <p className="text-[10px] font-medium opacity-90 drop-shadow flex items-center gap-1.5 truncate">
-                                                        <MapPin size={10} className="text-white/70" />
-                                                        {data.address || 'Address not recorded'}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md p-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Maximize2 size={14} className="text-white" />
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-800">
-                                            <ImageIcon size={48} strokeWidth={1} />
-                                            <span className="text-[9px] mt-3 font-black uppercase tracking-[0.2em]">No Field Imagery</span>
+                                        {/* Regional Overlay */}
+                                        <div className="absolute top-4 right-0 p-4 w-3/4 max-w-[220px] bg-gradient-to-bl from-black/80 via-black/50 to-transparent flex flex-col items-end pointer-events-none rounded-tl-2xl rounded-bl-2xl">
+                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">
+                                                {data?.city_district}
+                                            </span>
+                                            <span className="text-[11px] font-black text-white uppercase tracking-tight text-right leading-[1.2] break-words max-w-full">
+                                                {data?.uc_name}
+                                                <span className="block text-[8px] text-indigo-400 font-bold mt-1 tracking-widest">{data?.tehsil}</span>
+                                            </span>
                                         </div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
 
-                            {/* v3.0 Scrollable Image Gallery with Navigation & Placeholders */}
-                            <div className="relative mt-4 group">
-                                <div id="gallery-container" className="flex gap-3 overflow-hidden pb-4 scroll-smooth snap-x">
-                                    {/* Real Images from Portal */}
+                                        {/* Identity Overlay */}
+                                        <div className="absolute bottom-4 left-0 p-5 bg-gradient-to-tr from-black/80 via-black/50 to-transparent flex flex-col gap-1 pointer-events-none rounded-tr-2xl rounded-br-2xl">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div className="bg-indigo-600/90 backdrop-blur-md text-[8px] font-black text-white px-2 py-1 rounded leading-none uppercase tracking-[0.2em]">
+                                                    IMAGE {activeImage + 1} / {data.image_urls.length}
+                                                </div>
+                                            </div>
+                                            <h3 className="text-lg font-bold text-white tracking-tight">{data.consumer_name || 'Anonymous Consumer'}</h3>
+                                            <p className="text-[11px] font-medium text-white/80 flex items-center gap-1.5 leading-tight max-w-[240px]">
+                                                <MapPin size={11} className="text-indigo-400 shrink-0" />
+                                                {data.address || 'Address unverified'}
+                                            </p>
+                                        </div>
+
+                                        <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+                                            <Maximize2 size={16} className="text-white" />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-200 dark:text-slate-800">
+                                        <ImageIcon size={48} strokeWidth={1} />
+                                        <span className="text-[10px] mt-3 font-black uppercase tracking-widest opacity-50">No Evidence Captured</span>
+                                    </div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        <div className="p-4 space-y-4">
+                            {/* v4.7 Modern Filmstrip Gallery: High-Contrast Empty States */}
+                            <div className="relative group">
+                                <div
+                                    id="gallery-container"
+                                    className="flex gap-2.5 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1"
+                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                >
+                                    {/* Real Images */}
                                     {data.image_urls && data.image_urls.map((url, i) => (
-                                        <div key={`img-${i}`} className="flex flex-col items-center gap-1.5 shrink-0 snap-start">
-                                            <button
-                                                onClick={() => setActiveImage(i)}
-                                                className={`relative w-16 h-16 rounded-xl overflow-hidden transition-all border-2 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-xl ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-white/5 opacity-70 hover:opacity-100 hover:border-slate-300'}`}
-                                            >
+                                        <button
+                                            key={`img-${i}`}
+                                            onClick={() => setActiveImage(i)}
+                                            className="shrink-0 snap-start group/thumb relative transition-all"
+                                        >
+                                            <div className={`relative w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-300 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-lg z-10' : 'border-transparent grayscale opacity-70 hover:opacity-100 hover:grayscale-0'}`}>
                                                 <img src={url} className="w-full h-full object-cover" loading="lazy" />
-                                            </button>
-                                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">from portal</span>
-                                        </div>
-                                    ))}
 
-                                    {/* Empty Placeholder Slots */}
-                                    {[...Array(8)].map((_, i) => (
-                                        <div key={`empty-${i}`} className="flex flex-col items-center gap-1.5 shrink-0 snap-start">
-                                            <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-center transition-colors">
-                                                <ImageIcon size={20} className="text-slate-200 dark:text-slate-800" />
+                                                {/* Micro-Badge Overlay */}
+                                                <div className={`absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter backdrop-blur-md border ${i === activeImage ? 'bg-indigo-600/90 text-white border-white/20' : 'bg-black/60 text-white/70 border-white/10'}`}>
+                                                    portal
+                                                </div>
+
+                                                {/* Selection Check Accent */}
+                                                {i === activeImage && (
+                                                    <div className="absolute top-1 left-1 bg-indigo-500/90 rounded-full p-0.5 border border-white/20">
+                                                        <ImageIcon size={6} className="text-white" />
+                                                    </div>
+                                                )}
                                             </div>
-                                            <span className="text-[9px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-tight">empty</span>
+                                        </button>
+                                    ))}
+                                    {/* Darker Empty State Borders */}
+                                    {[...Array(8)].map((_, i) => (
+                                        <div key={`empty-${i}`} className="shrink-0 snap-start p-0.5 pointer-events-none">
+                                            <div className="w-[72px] h-[72px] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-100/30 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-1.5 opacity-40">
+                                                <ImageIcon size={14} className="text-slate-400 dark:text-slate-500" />
+                                                <span className="text-[6px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Void</span>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Custom Navigation Buttons (Visible when hovering or always on mobile touch) */}
-                                <div className="absolute top-1/2 -translate-y-[22px] left-0 right-0 flex justify-between pointer-events-none px-1">
+                                {/* Floating Navigation */}
+                                <div className="absolute top-1/2 -translate-y-1/2 -left-2 -right-2 flex justify-between pointer-events-none px-1">
                                     <button
-                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: -200, behavior: 'smooth' })}
-                                        className="w-8 h-8 flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' })}
+                                        className="w-9 h-9 flex items-center justify-center bg-white/95 dark:bg-slate-900/95 rounded-full shadow-xl text-slate-500 hover:text-indigo-500 pointer-events-auto opacity-0 group-hover:opacity-100 transition-all border border-slate-200 dark:border-white/5"
                                     >
                                         <ChevronLeft size={16} />
                                     </button>
                                     <button
-                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: 200, behavior: 'smooth' })}
-                                        className="w-8 h-8 flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' })}
+                                        className="w-9 h-9 flex items-center justify-center bg-white/95 dark:bg-slate-900/95 rounded-full shadow-xl text-slate-500 hover:text-indigo-500 pointer-events-auto opacity-0 group-hover:opacity-100 transition-all border border-slate-200 dark:border-white/5"
                                     >
                                         <ChevronRight size={16} />
                                     </button>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Financial Summary Overlay Cards - Always visible */}
-                        <div className="px-4 py-4 grid grid-cols-3 gap-2">
-                            <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 shadow-sm flex flex-col items-center text-center">
-                                <p className="text-[9px] font-bold text-indigo-500 opacity-70 uppercase tracking-tighter">Outstanding</p>
-                                <div className="text-sm mt-0.5">
-                                    <CurrencyText amount={financials.outstanding} />
+                            {/* Financial Bento Tiles */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
+                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Outstanding</span>
+                                    <div className="text-base font-bold text-slate-900 dark:text-white">
+                                        <CurrencyText amount={financials.outstanding} />
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
+                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Recovery</span>
+                                    <div className="text-base font-bold text-emerald-500 tabular-nums">
+                                        {financials.recoveryRate.toFixed(1)}%
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
+                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Last Paid</span>
+                                    <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                                        {financials.lastPaidDate ? new Date(financials.lastPaidDate).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : 'N/A'}
+                                    </div>
                                 </div>
                             </div>
-                            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-sm flex flex-col items-center text-center">
-                                <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter">Recovery</p>
-                                <p className="text-sm font-display font-bold text-slate-800 dark:text-slate-100 mt-0.5 tabular-nums">
-                                    {financials.recoveryRate.toFixed(1)}%
-                                </p>
-                            </div>
-                            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-sm flex flex-col items-center text-center">
-                                <p className="text-[9px] font-bold text-amber-500 uppercase tracking-tighter">Last Paid</p>
-                                <p className="text-[10px] font-display font-bold text-slate-800 dark:text-slate-100 mt-0.5 uppercase">
-                                    {financials.lastPaidDate ? new Date(financials.lastPaidDate).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : 'NONE'}
-                                </p>
-                            </div>
-                        </div>
 
-                        {/* Transaction History - Always shown at bottom of scroll */}
-                        <div className="px-6 py-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest inline-flex items-center gap-2">
-                                    <CreditCard size={12} className="text-emerald-400" /> Transaction History
-                                </h4>
-                                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full uppercase tabular-nums">
-                                    {bills.length} Records
-                                </span>
-                            </div>
+                            {/* Transaction Bento Module */}
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm flex flex-col overflow-hidden">
+                                <div className="px-5 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <CreditCard size={12} className="text-indigo-400" /> Transaction History
+                                    </h4>
+                                    <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 uppercase tracking-tighter">
+                                        {bills.length} Records
+                                    </span>
+                                </div>
 
-                            {bills.length > 0 ? (
-                                <div className="space-y-3">
-                                    {bills.map(bill => (
-                                        <div key={bill.bill_month} className="p-4 rounded-2xl bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 shadow-sm space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bill.payment_status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                                                        <FileText size={16} />
+                                {bills.length > 0 ? (
+                                    <div className="divide-y divide-slate-50 dark:divide-white/[0.03]">
+                                        {bills.map(bill => (
+                                            <div key={bill.bill_month} className="p-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${bill.payment_status === 'PAID' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-100 dark:border-amber-500/20'}`}>
+                                                            <FileText size={16} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">{bill.bill_month}</div>
+                                                            <div className="text-[9px] text-slate-400 font-mono flex items-center gap-1 opacity-80 mt-0.5">
+                                                                #{bill.psid}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 uppercase">{bill.bill_month}</div>
-                                                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                                                            PSID: <span className="font-mono">{bill.psid}</span>
-                                                            <CopyButton text={bill.psid} title="Copy PSID" />
+                                                    <StatusBadge
+                                                        status={bill.payment_status}
+                                                        variant={bill.payment_status === 'PAID' ? 'success' : 'warning'}
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center justify-between mt-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Amount Due</span>
+                                                        <CurrencyText amount={bill.amount_due} />
+                                                    </div>
+                                                    <div className="flex flex-col text-right">
+                                                        <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Paid</span>
+                                                        <div className={bill.payment_status === 'PAID' ? 'text-emerald-500 font-bold' : 'text-slate-400 font-medium'}>
+                                                            <CurrencyText amount={bill.amount_paid || 0} currency={null} />
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <StatusBadge
-                                                    status={bill.payment_status}
-                                                    variant={bill.payment_status === 'PAID' ? 'success' : 'warning'}
-                                                />
                                             </div>
-
-                                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/[0.03]">
-                                                <div className="flex flex-col">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold tracking-tight">Amount Due</span>
-                                                    <CurrencyText amount={bill.amount_due} />
-                                                </div>
-                                                <div className="flex flex-col text-right">
-                                                    <span className="text-[9px] text-slate-400 uppercase font-bold tracking-tight">
-                                                        {bill.payment_status === 'PAID' ? 'Amount Paid' : 'Pending Fee'}
-                                                    </span>
-                                                    <div className={bill.payment_status === 'PAID' ? 'text-emerald-500' : 'text-amber-500'}>
-                                                        <CurrencyText amount={bill.amount_paid || 0} currency={null} />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {bill.paid_date && (
-                                                <div className="flex items-center gap-2 text-[9px] text-slate-500 font-medium bg-slate-50 dark:bg-slate-900/40 p-1.5 rounded-lg border border-slate-200 dark:border-white/5">
-                                                    <CheckCircle2 size={10} className="text-emerald-500" />
-                                                    Reconciled on {new Date(bill.paid_date).toLocaleDateString('en-GB')} via {bill.payment_method || 'System'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-12 text-center bg-slate-50 dark:bg-slate-950/20 rounded-3xl border border-dashed border-slate-200 dark:border-white/10">
-                                    <AlertCircle size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
-                                    <p className="text-xs text-slate-500 italic max-w-[200px] mx-auto">No historical financial transactions are currently linked to this survey unit.</p>
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-10 text-center text-slate-400 text-[10px] font-medium italic opacity-60">
+                                        No linked transactions found.
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="h-20" /> {/* Bottom spacer for sticky nav */}
+                        <div className="h-24" />
                     </div>
 
-                    {/* Actions Sticky Footer */}
-                    <div className="sticky bottom-0 left-0 right-0 p-4 pt-2 bg-gradient-to-t from-white dark:from-slate-900 via-white dark:from-slate-900 to-transparent backdrop-blur-sm z-30 shrink-0">
+                    {/* v4.7 Floating Footer: Subtle Transparent Actions */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 z-30">
                         <div className="grid grid-cols-2 gap-3">
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white text-xs font-bold transition-all interactive-button shadow-xl shadow-indigo-600/20">
-                                <AlertCircle size={14} /> LOG TICKET
+                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-black transition-all border border-rose-100 dark:border-rose-500/20 active:scale-95 uppercase tracking-widest">
+                                <AlertCircle size={14} /> Log Ticket
                             </button>
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-2xl text-slate-700 dark:text-slate-300 text-xs font-bold transition-all interactive-button border border-slate-200 dark:border-white/5 shadow-sm">
-                                <ExternalLink size={14} /> FIELD VISIT
+                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 rounded-xl text-sky-600 dark:text-sky-400 text-xs font-black transition-all border border-sky-100 dark:border-sky-500/20 active:scale-95 uppercase tracking-widest">
+                                <ExternalLink size={14} /> Site Visit
                             </button>
                         </div>
                     </div>
                 </>
             ) : (
                 <div className="flex-1 flex items-center justify-center text-slate-500 text-xs italic">
-                    Record not found or accessible.
+                    Record not found.
                 </div>
             )}
 
-            {/* Full Screen Gallery Overlay */}
+            {/* Gallery Portal */}
             <AnimatePresence>
                 {isGalleryOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 md:p-8"
+                        className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 md:p-8"
+                        onClick={() => setIsGalleryOpen(false)}
                     >
-                        {/* Close & Controls */}
-                        <div className="absolute top-4 right-4 z-50 flex items-center gap-4">
-                            <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-xs font-bold border border-white/10 uppercase tracking-widest">
-                                {activeImage + 1} / {data.image_urls.length}
+                        <div className="absolute top-6 right-6 z-50 flex items-center gap-4">
+                            <div className="bg-white/10 px-3 py-1.5 rounded-lg text-white text-[10px] font-black border border-white/10 uppercase tracking-[0.2em]">
+                                {activeImage + 1} / {data?.image_urls?.length}
                             </div>
-                            <button
-                                onClick={() => setIsGalleryOpen(false)}
-                                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all active:scale-90 border border-white/10"
-                            >
+                            <button className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white border border-white/10">
                                 <X size={24} />
                             </button>
                         </div>
 
-                        {/* Main Image */}
-                        <div className="flex-1 w-full max-w-7xl flex items-center justify-center relative">
-                            {data.image_urls.length > 1 && (
+                        <div className="flex-1 w-full flex items-center justify-center relative" onClick={e => e.stopPropagation()}>
+                            {data?.image_urls?.length > 1 && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length); }}
-                                    className="absolute left-0 md:left-4 p-4 text-white/50 hover:text-white transition-colors z-20 hover:bg-white/5 rounded-full"
+                                    onClick={() => setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length)}
+                                    className="absolute left-0 p-6 text-white/30 hover:text-white hover:bg-white/5 rounded-full transition-all"
                                 >
-                                    <ChevronLeft size={48} strokeWidth={1} />
+                                    <ChevronLeft size={64} strokeWidth={1} />
                                 </button>
                             )}
 
@@ -410,37 +404,22 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 src={data.image_urls[activeImage]}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                drag
-                                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                                dragElastic={0.2}
-                                className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-sm select-none"
+                                className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-xl"
                             />
 
-                            {data.image_urls.length > 1 && (
+                            {data?.image_urls?.length > 1 && (
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev + 1) % data.image_urls.length); }}
-                                    className="absolute right-0 md:right-4 p-4 text-white/50 hover:text-white transition-colors z-20 hover:bg-white/5 rounded-full"
+                                    onClick={() => setActiveImage(prev => (prev + 1) % data.image_urls.length)}
+                                    className="absolute right-0 p-6 text-white/30 hover:text-white hover:bg-white/5 rounded-full transition-all"
                                 >
-                                    <ChevronRight size={48} strokeWidth={1} />
+                                    <ChevronRight size={64} strokeWidth={1} />
                                 </button>
                             )}
                         </div>
 
-                        {/* Navigation Strip */}
-                        {data.image_urls.length > 1 && (
-                            <div className="h-20 w-full max-w-3xl mt-6 flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                                {data.image_urls.map((url, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                                        className={`shrink-0 w-16 h-16 rounded-lg overflow-hidden transition-all border-2 ${i === activeImage ? 'border-indigo-500 scale-110 shadow-lg shadow-indigo-500/50' : 'border-transparent opacity-40 hover:opacity-100 hover:scale-105'}`}
-                                    >
-                                        <img src={url} className="w-full h-full object-cover" />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className="absolute bottom-10 text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">
+                            Use arrow keys to navigate
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
