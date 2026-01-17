@@ -111,33 +111,35 @@ export default function RecordDetail({ surveyId, onClose }) {
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors">
-            {/* v2.1 Header: Survey ID Centered & Bold */}
-            <div className="p-6 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/80 backdrop-blur-xl relative z-20">
-                <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-4xl font-display font-black text-slate-950 dark:text-white tracking-tighter tabular-nums drop-shadow-sm">
+            {/* v2.9 Unified Header: Consistent Sizes for Mobile & Desktop */}
+            <div className="p-2 md:p-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/80 backdrop-blur-xl relative z-20 shrink-0">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1 flex items-center gap-4">
+                        <h1 className="text-3xl font-display font-black text-slate-950 dark:text-white tracking-tighter tabular-nums drop-shadow-sm shrink-0">
                             {surveyId}
                         </h1>
-                        <div className="flex items-center gap-3 mt-4">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 rounded-lg border border-indigo-500/10">
-                                <User size={12} className="text-indigo-500" />
-                                <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest leading-none">
-                                    {data?.surveyor_name || 'System Auto'}
+
+                        <div className="flex items-center gap-2 overflow-hidden py-1">
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/10 shrink-0 shadow-sm">
+                                <User size={10} className="text-indigo-500" />
+                                <span className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest leading-none">
+                                    {data?.surveyor_name || 'AUTO'}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/5">
-                                <Calendar size={12} className="text-slate-400" />
-                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tabular-nums leading-none">
-                                    {data?.survey_date} {data?.survey_time}
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-white/5 shrink-0 shadow-sm">
+                                <Calendar size={10} className="text-slate-400" />
+                                <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 tabular-nums leading-none">
+                                    {data?.survey_date}
                                 </span>
                             </div>
                         </div>
                     </div>
+
                     <button
                         onClick={onClose}
-                        className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 rounded-2xl text-slate-400 transition-all active:scale-90 border border-slate-200 dark:border-white/5"
+                        className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 transition-all active:scale-90 border border-slate-200 dark:border-white/5 shrink-0"
                     >
-                        <X size={20} />
+                        <X size={18} />
                     </button>
                 </div>
             </div>
@@ -148,86 +150,89 @@ export default function RecordDetail({ surveyId, onClose }) {
                     <span className="text-xs text-slate-500 font-medium">Reconstructing Records...</span>
                 </div>
             ) : data ? (
-                <div className="flex-1 overflow-y-auto scrollbar-premium">
-                    {/* v2.1 Modern Minimal Gallery */}
-                    <div className="p-4">
-                        <div
-                            className="relative aspect-square md:aspect-video rounded-panel overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/5 shadow-2xl group cursor-zoom-in"
-                            onClick={() => setZoom(z => z === 1 ? 1.05 : 1)} // Placeholder for full gallery trigger logic if needed, but for now we'll execute the request to "open gallery"
-                        >
-                            <AnimatePresence mode="wait">
-                                {data.image_urls && data.image_urls.length > 0 ? (
-                                    <>
-                                        <motion.img
-                                            key={activeImage}
-                                            src={data.image_urls[activeImage]}
-                                            initial={{ opacity: 0, scale: 1.1 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.4 }}
-                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            onClick={() => setIsGalleryOpen(true)}
-                                        />
+                <>
+                    <div className="flex-1 overflow-y-auto scrollbar-premium">
+                        {/* v2.6 Modern Overlay Image (Regional info on image top-right) */}
+                        <div className="p-4">
+                            <div
+                                className="relative h-48 md:h-64 rounded-panel overflow-hidden bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-white/5 shadow-2zl group cursor-zoom-in"
+                                onClick={() => setIsGalleryOpen(true)}
+                            >
+                                <AnimatePresence mode="wait">
+                                    {data.image_urls && data.image_urls.length > 0 ? (
+                                        <>
+                                            <motion.img
+                                                key={activeImage}
+                                                src={data.image_urls[activeImage]}
+                                                initial={{ opacity: 0, scale: 1.1 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                transition={{ duration: 0.4 }}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            />
 
-                                        {/* Overlay Gradient for Text readability */}
-                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                                            {/* Overlay Gradient */}
+                                            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none" />
+                                            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none" />
 
-                                        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white pointer-events-none">
-                                            <div className="flex items-center gap-2">
-                                                <div className="bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest border border-white/10">
-                                                    Image {activeImage + 1} / {data.image_urls.length}
+                                            {/* Overlay Regional Hierarchy (Top Right) */}
+                                            <div className="absolute top-3 right-3 flex flex-col items-end pointer-events-none">
+                                                <div className="bg-black/30 backdrop-blur-md px-2 py-1 rounded-lg border border-white/10 text-right">
+                                                    <span className="block text-[8px] font-black text-white/70 uppercase tracking-widest leading-none">
+                                                        {data?.city_district}
+                                                    </span>
+                                                    <span className="block text-[11px] md:text-sm font-black text-white uppercase tracking-tight leading-tight mt-0.5 max-w-[140px] break-words">
+                                                        {shortenAreaName(data?.uc_name, data?.city_district, data?.tehsil)}
+                                                    </span>
                                                 </div>
                                             </div>
-                                            <div className="bg-indigo-500/80 backdrop-blur-md p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
-                                                <Maximize2 size={16} />
+
+                                            {/* Overlay Identity Card (Bottom Left) */}
+                                            <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-1 text-white pointer-events-none">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-indigo-500/90 backdrop-blur-md px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border border-white/20">
+                                                        IMAGE {activeImage + 1} / {data.image_urls.length}
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-0.5 mt-1">
+                                                    <h3 className="text-sm font-black tracking-tight drop-shadow-md truncate">{data.consumer_name || 'Anonymous Consumer'}</h3>
+                                                    <p className="text-[10px] font-medium opacity-90 drop-shadow flex items-center gap-1.5 truncate">
+                                                        <MapPin size={10} className="text-white/70" />
+                                                        {data.address || 'Address not recorded'}
+                                                    </p>
+                                                </div>
                                             </div>
+
+                                            <div className="absolute top-3 left-3 bg-white/10 backdrop-blur-md p-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Maximize2 size={14} className="text-white" />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-800">
+                                            <ImageIcon size={48} strokeWidth={1} />
+                                            <span className="text-[9px] mt-3 font-black uppercase tracking-[0.2em]">No Field Imagery</span>
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-800">
-                                        <ImageIcon size={64} strokeWidth={1} />
-                                        <span className="text-[10px] mt-4 font-black uppercase tracking-[0.2em]">No Field Imagery</span>
-                                    </div>
-                                )}
-                            </AnimatePresence>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Thumbnails Strip */}
+                            {data.image_urls && data.image_urls.length > 1 && (
+                                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
+                                    {data.image_urls.map((url, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setActiveImage(i)}
+                                            className={`shrink-0 relative w-12 h-12 rounded-lg overflow-hidden transition-all border-2 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                        >
+                                            <img src={url} className="w-full h-full object-cover" loading="lazy" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Thumbnails Strip */}
-                        {data.image_urls && data.image_urls.length > 1 && (
-                            <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-premium">
-                                {data.image_urls.map((url, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setActiveImage(i)}
-                                        className={`shrink-0 relative w-16 h-16 rounded-xl overflow-hidden transition-all ${i === activeImage ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-900' : 'opacity-60 hover:opacity-100 hover:scale-105'}`}
-                                    >
-                                        <img src={url} className="w-full h-full object-cover" loading="lazy" />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Consumer Info Card */}
-                    <div className="px-4 py-2">
-                        <div className="p-4 rounded-card bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-white/5 space-y-4 shadow-sm">
-                            <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 border border-indigo-500/20">
-                                    <User size={20} />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{data.consumer_name || 'Anonymous Consumer'}</h3>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 font-medium">
-                                        <MapPin size={12} className="text-slate-400" />
-                                        {data.address || 'Address not recorded'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Financial Summary Overlay Cards */}
-                    {bills.length > 0 && (
+                        {/* Financial Summary Overlay Cards - Always visible */}
                         <div className="px-4 py-4 grid grid-cols-3 gap-2">
                             <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 shadow-sm flex flex-col items-center text-center">
                                 <p className="text-[9px] font-bold text-indigo-500 opacity-70 uppercase tracking-tighter">Outstanding</p>
@@ -248,29 +253,9 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 </p>
                             </div>
                         </div>
-                    )}
 
-                    {/* Hierarchy Info */}
-                    <div className="px-6 py-2 space-y-4">
-                        <div className="flex flex-col gap-1">
-                            <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest inline-flex items-center gap-2">
-                                <MapPin size={12} className="text-indigo-500 dark:text-indigo-400" /> Regional Hierarchy
-                            </h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                <span className="px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] border border-slate-200 dark:border-white/5 font-bold">
-                                    {data.city_district}
-                                </span>
-                                <span className="px-2.5 py-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-[11px] border border-slate-200 dark:border-white/5 font-bold">
-                                    {data.tehsil}
-                                </span>
-                                <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[11px] border border-slate-200 dark:border-white/5 italic">
-                                    {shortenAreaName(data.uc_name, data.city_district, data.tehsil)}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Structured Financial History */}
-                        <div className="space-y-4 pt-4 pb-8">
+                        {/* Transaction History - Always shown at bottom of scroll */}
+                        <div className="px-6 py-4 space-y-4">
                             <div className="flex items-center justify-between">
                                 <h4 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest inline-flex items-center gap-2">
                                     <CreditCard size={12} className="text-emerald-400" /> Transaction History
@@ -334,10 +319,11 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 </div>
                             )}
                         </div>
+                        <div className="h-20" /> {/* Bottom spacer for sticky nav */}
                     </div>
 
                     {/* Actions Sticky Footer */}
-                    <div className="sticky bottom-0 left-0 right-0 p-4 pt-2 bg-gradient-to-t from-white dark:from-slate-900 via-white dark:from-slate-900 to-transparent backdrop-blur-sm">
+                    <div className="sticky bottom-0 left-0 right-0 p-4 pt-2 bg-gradient-to-t from-white dark:from-slate-900 via-white dark:from-slate-900 to-transparent backdrop-blur-sm z-30 shrink-0">
                         <div className="grid grid-cols-2 gap-3">
                             <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 rounded-2xl text-white text-xs font-bold transition-all interactive-button shadow-xl shadow-indigo-600/20">
                                 <AlertCircle size={14} /> LOG TICKET
@@ -347,13 +333,13 @@ export default function RecordDetail({ surveyId, onClose }) {
                             </button>
                         </div>
                     </div>
-                    <div className="h-10" /> {/* Spacer */}
-                </div>
+                </>
             ) : (
                 <div className="flex-1 flex items-center justify-center text-slate-500 text-xs italic">
                     Record not found or accessible.
                 </div>
             )}
+
             {/* Full Screen Gallery Overlay */}
             <AnimatePresence>
                 {isGalleryOpen && (
