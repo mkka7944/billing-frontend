@@ -51,10 +51,24 @@ export default function SurveyStatsView() {
     const [isFilterOpen, setIsFilterOpen] = useState(true)
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
 
-    // Initial Load - Only surveyors
+    // Load surveyors - Reactive to location filters
     useEffect(() => {
+        const fetchSurveyors = async () => {
+            const { data, error } = await supabase.rpc('get_distinct_surveyors', {
+                p_district: filters.district || null,
+                p_tehsil: filters.tehsil || null,
+                p_uc: filters.uc || null
+            })
+
+            if (!error && data) {
+                const names = data.map(item => item.surveyor_name)
+                setSurveyors(names)
+            } else if (error) {
+                console.error('Error fetching surveyors:', error)
+            }
+        }
         fetchSurveyors()
-    }, [])
+    }, [filters.district, filters.tehsil, filters.uc])
 
     // Reset page on filter change
     useEffect(() => {
@@ -66,15 +80,6 @@ export default function SurveyStatsView() {
         const timeout = setTimeout(fetchData, 500)
         return () => clearTimeout(timeout)
     }, [filters, pageIndex, sortConfig])
-
-
-    async function fetchSurveyors() {
-        const { data } = await supabase.from('survey_units').select('surveyor_name')
-        if (data) {
-            const unique = [...new Set(data.map(i => i.surveyor_name?.trim()).filter(Boolean))].sort()
-            setSurveyors(unique)
-        }
-    }
 
     async function fetchData() {
         try {
