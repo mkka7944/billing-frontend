@@ -35,26 +35,25 @@ export default function SurveyStatsView() {
     })
 
     const [filters, setFilters] = useState({
-        district: 'SARGODHA',
+        district: '',  // No default - show all
         tehsil: '',
         uc: '',
         surveyor: '',
-        masterStatus: 'ACTIVE_BILLER', // Default to ACTIVE
+        masterStatus: 'ALL',  // Default to ALL
         search: ''
     })
 
     const { districts, tehsils, ucs } = useLocationHierarchy(filters)
 
     const [surveyors, setSurveyors] = useState([])
-    const [sortConfig, setSortConfig] = useState({ key: 'survey_id', direction: 'desc' })
+    const [sortConfig, setSortConfig] = useState({ key: 'id_numeric', direction: 'desc' })  // id_numeric for perfect numeric/chronological order
 
     const [isFilterOpen, setIsFilterOpen] = useState(true)
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
 
-    // Initial Load
+    // Initial Load - Only surveyors
     useEffect(() => {
         fetchSurveyors()
-        fetchGlobalStats()
     }, [])
 
     // Reset page on filter change
@@ -62,12 +61,9 @@ export default function SurveyStatsView() {
         setPageIndex(0)
     }, [filters])
 
-    // Fetch Data on filter/page change + Stats
+    // Single fetch trigger
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            fetchData()
-            fetchGlobalStats()
-        }, 400) // Slightly longer debounce for stability
+        const timeout = setTimeout(fetchData, 500)
         return () => clearTimeout(timeout)
     }, [filters, pageIndex, sortConfig])
 
@@ -80,221 +76,126 @@ export default function SurveyStatsView() {
         }
     }
 
-    async function fetchGlobalStats() {
-        try {
-            // Helper for location filters (NO SEARCH - search is table-only for performance)
-            const applyLocationFilters = (q) => {
-                if (filters.district) q = q.eq('city_district', filters.district)
-                if (filters.tehsil) q = q.eq('tehsil', filters.tehsil)
-                if (filters.uc) q = q.eq('uc_name', filters.uc)
-                if (filters.surveyor) q = q.eq('surveyor_name', filters.surveyor)
-                return q
-            }
-
-            // 1. FAST COUNTS using head-only queries (instant on 100k+ rows)
-            let totalQ = supabase.from('survey_units').select('survey_id', { count: 'exact', head: true })
-            let activeQ = supabase.from('survey_units').select('survey_id', { count: 'exact', head: true }).eq('status', 'ACTIVE')
-            let archivedQ = supabase.from('survey_units').select('survey_id', { count: 'exact', head: true }).eq('status', 'ARCHIVED')
-            let billerQ = supabase.from('survey_units').select('survey_id, bills!inner(survey_id)', { count: 'exact', head: true }).eq('status', 'ACTIVE')
-
-            totalQ = applyLocationFilters(totalQ)
-            activeQ = applyLocationFilters(activeQ)
-            archivedQ = applyLocationFilters(archivedQ)
-            billerQ = applyLocationFilters(billerQ)
-
-            // 2. REVENUE from bills table (simple, no foreignTable issues)
-            let revQ = supabase.from('bills').select('amount_due, amount_paid')
-            // Note: We'll get ALL bills and filter client-side if needed, or rely on location being set
-
-            const [
-                { count: totalCount },
-                { count: activeCount },
-                { count: archivedCount },
-                { count: billerCount },
-                { data: revData }
-            ] = await Promise.all([
-                totalQ, activeQ, archivedQ, billerQ, revQ
-            ])
-
-            // Calculate Revenue Aggregates
-            let totalDue = 0
-            let totalPaid = 0
-            if (revData) {
-                revData.forEach(b => {
-                    totalDue += (b.amount_due || 0)
-                    totalPaid += (b.amount_paid || 0)
-                })
-            }
-
-            const activeBillers = billerCount || 0
-            const newSurveys = (activeCount || 0) - activeBillers
-
-            // Assembly based on masterStatus (Reactive KPIs)
-            if (filters.masterStatus === 'ACTIVE_BILLER') {
-                setStats({
-                    totalSurveys: activeBillers,
-                    activeSurveys: activeBillers,
-                    archivedRecords: 0,
-                    totalDue, totalPaid,
-                    recoveryRate: totalDue > 0 ? (totalPaid / totalDue) * 100 : 0
-                })
-            } else if (filters.masterStatus === 'NEW_SURVEY') {
-                setStats({
-                    totalSurveys: newSurveys,
-                    activeSurveys: 0,
-                    archivedRecords: 0,
-                    totalDue: 0, totalPaid: 0, recoveryRate: 0
-                })
-            } else if (filters.masterStatus === 'ARCHIVED') {
-                setStats({
-                    totalSurveys: archivedCount || 0,
-                    activeSurveys: 0,
-                    archivedRecords: archivedCount || 0,
-                    totalDue: 0, totalPaid: 0, recoveryRate: 0
-                })
-            } else {
-                setStats({
-                    totalSurveys: totalCount || 0,
-                    activeSurveys: activeBillers,
-                    archivedRecords: archivedCount || 0,
-                    totalDue, totalPaid,
-                    recoveryRate: totalDue > 0 ? (totalPaid / totalDue) * 100 : 0
-                })
-            }
-        } catch (e) {
-            console.error("Global stats error:", e)
-        }
-    }
-
     async function fetchData() {
         try {
             setLoading(true)
             setError(null)
 
-            // 1. Build Base Query for Counting
-            let baseQuery = supabase.from('survey_units').select('survey_id', { count: 'exact', head: true })
+            // 1. SIMPLE COUNT (fast head-only query on the VIEW)
+            let countQuery = supabase.from('survey_units_with_stats')
+                .select('survey_id', { count: 'exact', head: true })
 
-            // Apply Filters to Count Query
-            if (filters.district) baseQuery = baseQuery.eq('city_district', filters.district)
-            if (filters.tehsil) baseQuery = baseQuery.eq('tehsil', filters.tehsil)
-            if (filters.uc) baseQuery = baseQuery.eq('uc_name', filters.uc)
-            if (filters.surveyor) baseQuery = baseQuery.eq('surveyor_name', filters.surveyor)
-            if (filters.search) {
-                baseQuery = baseQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
-            }
+            // Apply location filters
+            if (filters.district) countQuery = countQuery.eq('city_district', filters.district)
+            if (filters.tehsil) countQuery = countQuery.eq('tehsil', filters.tehsil)
+            if (filters.uc) countQuery = countQuery.eq('uc_name', filters.uc)
+            if (filters.surveyor) countQuery = countQuery.eq('surveyor_name', filters.surveyor)
+            if (filters.search) countQuery = countQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
 
-            // Apply Status Filter to DB Query
+            // Apply status filters using the view columns
             if (filters.masterStatus === 'ARCHIVED') {
-                baseQuery = baseQuery.eq('status', 'ARCHIVED')
+                countQuery = countQuery.eq('status', 'ARCHIVED')
             } else if (filters.masterStatus === 'ACTIVE_BILLER') {
-                // Build fresh query with inner join for accurate count
-                baseQuery = supabase.from('survey_units')
-                    .select('survey_id, bills!inner(survey_id)', { count: 'exact', head: true })
-                    .eq('status', 'ACTIVE')
-                if (filters.district) baseQuery = baseQuery.eq('city_district', filters.district)
-                if (filters.tehsil) baseQuery = baseQuery.eq('tehsil', filters.tehsil)
-                if (filters.uc) baseQuery = baseQuery.eq('uc_name', filters.uc)
-                if (filters.surveyor) baseQuery = baseQuery.eq('surveyor_name', filters.surveyor)
-                if (filters.search) baseQuery = baseQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
+                countQuery = countQuery.eq('status', 'ACTIVE').eq('is_biller', true)
             } else if (filters.masterStatus === 'NEW_SURVEY') {
-                // For NEW_SURVEY, we need to calculate (Active - Billers) count
-                // The correct count will come from stats, just use active for now
-                baseQuery = baseQuery.eq('status', 'ACTIVE')
+                countQuery = countQuery.eq('status', 'ACTIVE').eq('is_biller', false)
             } else if (filters.masterStatus !== 'ALL') {
-                baseQuery = baseQuery.eq('status', 'ACTIVE')
+                countQuery = countQuery.eq('status', 'ACTIVE')
             }
 
-            const { count: fetchedCount, error: countErr } = await baseQuery
-            if (countErr) throw countErr
+            const { count: currentCountResult } = await countQuery
+            const currentCount = currentCountResult || 0
+            setTotalCount(currentCount)
 
-            // For NEW_SURVEY, we don't have a direct count - use stats.totalSurveys which is calculated correctly
-            // For other modes, use the DB count
-            setTotalCount(fetchedCount || 0)
-
-            // 2. Fetch Paginated Records
-            const selectFields = `
+            // 2. DATA QUERY - Step 1: Base Survey Fetch (Fast)
+            let query = supabase.from('survey_units_with_stats').select(`
                 survey_id, consumer_name, city_district, tehsil, uc_name, 
-                status, surveyor_name, survey_date,
-                bills (amount_due, amount_paid, payment_status, is_issued, bill_month)
-            `
-            let dataQuery = supabase.from('survey_units').select(selectFields)
+                status, surveyor_name, survey_date, created_at, is_biller
+            `)
 
-            if (filters.district) dataQuery = dataQuery.eq('city_district', filters.district)
-            if (filters.tehsil) dataQuery = dataQuery.eq('tehsil', filters.tehsil)
-            if (filters.uc) dataQuery = dataQuery.eq('uc_name', filters.uc)
-            if (filters.surveyor) dataQuery = dataQuery.eq('surveyor_name', filters.surveyor)
-            if (filters.search) {
-                dataQuery = dataQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
-            }
+            // Apply same location filters
+            if (filters.district) query = query.eq('city_district', filters.district)
+            if (filters.tehsil) query = query.eq('tehsil', filters.tehsil)
+            if (filters.uc) query = query.eq('uc_name', filters.uc)
+            if (filters.surveyor) query = query.eq('surveyor_name', filters.surveyor)
+            if (filters.search) query = query.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
 
-            // Apply Status Filter to Data Query
+            // Apply status filters
             if (filters.masterStatus === 'ARCHIVED') {
-                dataQuery = dataQuery.eq('status', 'ARCHIVED')
+                query = query.eq('status', 'ARCHIVED')
             } else if (filters.masterStatus === 'ACTIVE_BILLER') {
-                // Build fresh query with inner join for billers only
-                const billerFields = `
-                    survey_id, consumer_name, city_district, tehsil, uc_name, 
-                    status, surveyor_name, survey_date,
-                    bills!inner (amount_due, amount_paid, payment_status, is_issued, bill_month)
-                `
-                dataQuery = supabase.from('survey_units').select(billerFields).eq('status', 'ACTIVE')
-                if (filters.district) dataQuery = dataQuery.eq('city_district', filters.district)
-                if (filters.tehsil) dataQuery = dataQuery.eq('tehsil', filters.tehsil)
-                if (filters.uc) dataQuery = dataQuery.eq('uc_name', filters.uc)
-                if (filters.surveyor) dataQuery = dataQuery.eq('surveyor_name', filters.surveyor)
-                if (filters.search) dataQuery = dataQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
+                query = query.eq('status', 'ACTIVE').eq('is_biller', true)
             } else if (filters.masterStatus === 'NEW_SURVEY') {
-                // For NEW_SURVEY, we need to overfetch because we filter client-side
-                dataQuery = dataQuery.eq('status', 'ACTIVE')
+                query = query.eq('status', 'ACTIVE').eq('is_biller', false)
             } else if (filters.masterStatus !== 'ALL') {
-                dataQuery = dataQuery.eq('status', 'ACTIVE')
+                query = query.eq('status', 'ACTIVE')
             }
 
-            // For NEW_SURVEY, overfetch to ensure we have enough records after filtering
-            const fetchSize = filters.masterStatus === 'NEW_SURVEY' ? PAGE_SIZE * 5 : PAGE_SIZE
-            const from = pageIndex * PAGE_SIZE  // Still paginate normally for display
-            const to = from + fetchSize - 1
-            const { data, error } = await dataQuery
+            // Pagination - Simple pagination since filtering is now server-side
+            const from = pageIndex * PAGE_SIZE
+            const to = from + PAGE_SIZE - 1
+
+            // Apply sort and range (leveraging the new functional index on id_numeric)
+            const { data, error } = await query
                 .range(from, to)
                 .order(sortConfig.key, { ascending: sortConfig.direction === 'asc' })
 
             if (error) throw error
 
-            // 3. Post-Process for v2.0 View logic
-            const processed = (data || []).map(row => {
-                const bills = (row.bills || []).sort((a, b) => b.bill_month.localeCompare(a.bill_month))
-                const totalDue = bills.reduce((sum, b) => sum + (b.amount_due || 0), 0)
-                const totalPaid = bills.reduce((sum, b) => sum + (b.amount_paid || 0), 0)
-                const isBiller = bills.length > 0
+            // 3. Step 2: Bill Hydration (Pluck bills for only these 50 records)
+            const surveyIds = (data || []).map(r => r.survey_id)
+            let billsData = []
 
-                // Get month history (last 4 months)
-                const months = ['DEC2025', 'NOV2025', 'OCT2025', 'SEP2025']
-                const history = months.map(m => {
-                    const b = bills.find(bill => bill.bill_month === m)
-                    return {
-                        month: m,
-                        paid: b ? b.payment_status === 'PAID' : null,
-                        issued: b ? b.is_issued : null
-                    }
-                })
+            if (surveyIds.length > 0) {
+                const { data: bData, error: bError } = await supabase.from('bills')
+                    .select('survey_id, amount_due, amount_paid, payment_status, is_issued, bill_month')
+                    .in('survey_id', surveyIds)
 
-                return {
-                    ...row,
-                    total_due: totalDue,
-                    total_paid: totalPaid,
-                    is_biller: isBiller,
-                    history: history
-                }
-            })
-
-            // 4. Client-side refinement for "NEW SURVEY" (No Bills)
-            let finalRecords = processed
-            if (filters.masterStatus === 'NEW_SURVEY') {
-                finalRecords = processed.filter(r => !r.is_biller).slice(0, PAGE_SIZE)
+                if (!bError) billsData = bData
             }
 
-            setRecords(finalRecords)
-            // No need to recalculate stats here as fetchGlobalStats handles it dataset-wide
+            // 4. Process records (Merge and Calculate)
+            const processed = (data || []).map(row => {
+                const bills = billsData.filter(b => b.survey_id === row.survey_id)
+                const isBiller = row.is_biller
+
+                // Skip detailed bill processing for NEW_SURVEY if not needed, 
+                // but usually we want to see available bills if any
+                if (filters.masterStatus === 'NEW_SURVEY' && bills.length === 0) {
+                    return { ...row, total_due: 0, total_paid: 0, is_biller: isBiller, history: [] }
+                }
+
+                // Full processing
+                const sortedBills = bills.sort((a, b) => (b.bill_month || '').localeCompare(a.bill_month || ''))
+                const totalDue = sortedBills.reduce((sum, b) => sum + (b.amount_due || 0), 0)
+                const totalPaid = sortedBills.reduce((sum, b) => sum + (b.amount_paid || 0), 0)
+
+                const months = ['DEC2025', 'NOV2025', 'OCT2025', 'SEP2025']
+                const history = months.map(m => {
+                    const b = sortedBills.find(bill => bill.bill_month === m)
+                    return { month: m, paid: b ? b.payment_status === 'PAID' : null, issued: b ? b.is_issued : null }
+                })
+
+                return { ...row, total_due: totalDue, total_paid: totalPaid, is_biller: isBiller, history }
+            })
+
+            setRecords(processed)
+
+            // 4. Stats calculation
+            const visibleDue = processed.reduce((s, r) => s + (r.total_due || 0), 0)
+            const visiblePaid = processed.reduce((s, r) => s + (r.total_paid || 0), 0)
+
+            // If we are in 'ACTIVE_BILLER' mode, the totalCount IS the number of active surveys
+            const totalActiveSurveys = filters.masterStatus === 'ACTIVE_BILLER' ? currentCount : processed.filter(r => r.is_biller).length
+
+            setStats({
+                totalSurveys: currentCount || 0,
+                activeSurveys: totalActiveSurveys,
+                archivedRecords: filters.masterStatus === 'ARCHIVED' ? (currentCount || 0) : 0,
+                totalDue: visibleDue,
+                totalPaid: visiblePaid,
+                recoveryRate: visibleDue > 0 ? (visiblePaid / visibleDue) * 100 : 0
+            })
 
         } catch (err) {
             console.error('Fetch error:', err)
@@ -310,6 +211,7 @@ export default function SurveyStatsView() {
             direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
         }))
     }
+
 
     return (
         <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
@@ -373,52 +275,7 @@ export default function SurveyStatsView() {
                 </div>
             </div>
 
-            {/* v2.1 KPI Bar - Compact (Labels and Results on same row) */}
-            <div className="px-3 md:px-6 py-3 md:py-4 grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3 bg-slate-50/50 dark:bg-slate-900/20 shrink-0">
-                {[
-                    { label: 'TOTALS', val: stats.totalSurveys, sub: 'Unified Census', color: 'indigo', icon: <Layers size={14} /> },
-                    { label: 'ACTIVE', val: stats.activeSurveys, sub: 'Portal Sync', color: 'emerald', icon: <UserCheck size={14} /> },
-                    { label: 'ARCHIVE', val: stats.archivedRecords, sub: 'Not in Portal', color: 'rose', icon: <Printer size={14} /> },
-                    {
-                        label: 'REVENUE',
-                        val: stats.totalPaid,
-                        sub: `of ${stats.totalDue.toLocaleString()}`,
-                        color: 'amber',
-                        icon: <CreditCard size={14} />,
-                        cur: true
-                    },
-                    {
-                        label: 'EFFICIENCY',
-                        val: stats.recoveryRate.toFixed(1) + '%',
-                        sub: 'Collection Rate',
-                        color: 'purple',
-                        icon: <RefreshCw size={14} />
-                    },
-                ].map((kpi, i) => (
-                    <div key={i} className={`px-4 py-2.5 relative overflow-hidden group hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-700 bg-white/40 dark:bg-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/40 dark:border-white/[0.05] hover:border-indigo-500/30 hover:-translate-y-0.5 active:scale-[0.98] ${i >= 3 ? 'hidden md:flex' : 'flex'} items-center gap-3`}>
-                        <div className={`absolute -top-10 -right-10 w-20 h-20 bg-${kpi.color}-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000 opacity-50`}></div>
-
-                        <div className={`p-2 rounded-xl shrink-0 ${kpi.color === 'indigo' ? 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20' : `bg-${kpi.color}-500/10 text-${kpi.color}-500 border border-${kpi.color}-500/10 shadow-sm`}`}>
-                            {kpi.icon}
-                        </div>
-
-                        <div className="flex-1 min-w-0 relative z-10">
-                            <div className="flex items-center justify-between gap-2">
-                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-display truncate">
-                                    {kpi.label}
-                                </div>
-                                <div className="text-sm md:text-base font-display font-bold text-slate-900 dark:text-slate-100 tabular-nums group-hover:text-indigo-500 transition-colors shrink-0">
-                                    {kpi.cur ? <CurrencyText amount={kpi.val} /> : kpi.val.toLocaleString()}
-                                </div>
-                            </div>
-                            <div className="text-[8px] md:text-[9px] font-medium text-slate-500/60 truncate uppercase tracking-tighter mt-[-2px] hidden md:block">
-                                {kpi.sub}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
+            {/* Table Container */}
             {/* Unifed Table Container including Filters */}
             <div className="flex-1 flex flex-col overflow-hidden relative gap-0">
                 <div className="glass-panel overflow-hidden border-t border-slate-200 dark:border-white/5 flex-1 flex flex-col bg-white dark:bg-slate-900/50 min-h-0">
@@ -498,10 +355,10 @@ export default function SurveyStatsView() {
                     {/* Table Header */}
                     <div className="grid grid-cols-12 gap-0 py-3 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 sticky top-0 z-10 shadow-sm">
                         <div
-                            className={`col-span-2 md:col-span-2 lg:col-span-1 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 pl-6 group/sort ${sortConfig.key === 'survey_id' ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
-                            onClick={() => toggleSort('survey_id')}
+                            className={`col-span-2 md:col-span-2 lg:col-span-1 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 pl-6 group/sort ${sortConfig.key === 'id_numeric' ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
+                            onClick={() => toggleSort('id_numeric')}
                         >
-                            ID <ArrowUpDown size={12} className={`transition-transform duration-300 ${sortConfig.key === 'survey_id' && sortConfig.direction === 'asc' ? 'rotate-180 text-indigo-500' : 'opacity-40 group-hover/sort:opacity-100'}`} />
+                            ID <ArrowUpDown size={12} className={`transition-transform duration-300 ${sortConfig.key === 'id_numeric' && sortConfig.direction === 'asc' ? 'rotate-180 text-indigo-500' : 'opacity-40 group-hover/sort:opacity-100'}`} />
                         </div>
                         <div className="col-span-7 md:col-span-4 lg:col-span-3 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Identity</div>
                         <div className="col-span-3 md:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</div>
