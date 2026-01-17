@@ -39,16 +39,6 @@ function Layout() {
             <Route path="/" element={
               <div className="w-full h-full relative">
                 <Map />
-
-                {/* Mobile Sidebar Trigger - Floating on Map */}
-                {!isSidebarOpen && (
-                  <button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="md:hidden absolute top-4 left-4 z-[1000] p-3 glass-panel rounded-xl text-indigo-400 shadow-2xl interactive-button"
-                  >
-                    <Menu size={24} />
-                  </button>
-                )}
               </div>
             } />
             <Route path="/surveys" element={<SurveyStatsView />} />

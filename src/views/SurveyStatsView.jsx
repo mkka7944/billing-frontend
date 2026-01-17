@@ -221,22 +221,20 @@ export default function SurveyStatsView() {
     return (
         <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
             {/* Header Section */}
-            <div className="p-2 md:p-3 md:px-6 pb-2 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/40 gap-1.5 md:gap-4 shrink-0">
-                <div className="flex items-center gap-1.5 md:gap-3 min-w-0 flex-1">
-                    <div className="p-1.5 md:p-3 rounded-xl bg-indigo-500/10 text-indigo-500 shrink-0 hidden sm:block">
-                        <BarChart3 size={18} className="md:w-6 md:h-6" />
+            <div className="p-1.5 md:p-2 md:px-4 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/40 gap-1.5 md:gap-4 shrink-0">
+                <div className="flex items-center gap-1.5 md:gap-2.5 min-w-0 flex-1">
+                    <div className="p-1 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0 hidden lg:block">
+                        <BarChart3 size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h1 className="text-sm sm:text-lg md:text-2xl font-bold text-slate-900 dark:text-slate-100 font-display uppercase tracking-tight truncate leading-tight">
+                        <h1 className="text-xs sm:text-sm md:text-lg font-bold text-slate-900 dark:text-slate-100 font-display uppercase tracking-tight truncate leading-tight">
                             {filters.uc || filters.tehsil || filters.district || 'Global Dataset'}
                         </h1>
-                        <p className="text-slate-500 text-[8.5px] md:text-[11px] font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1 md:gap-2 opacity-80">
-                            <span className="text-indigo-500 truncate max-w-[60px] md:max-w-none">
-                                {filters.uc ? 'UC' : filters.tehsil ? 'Tehsil' : 'District'}
+                        <div className="mt-0.5 flex items-center">
+                            <span className="px-1.5 py-0 rounded bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-[8px] md:text-[11px] font-black text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-500/10 tracking-tight whitespace-nowrap">
+                                {totalCount.toLocaleString()} RECORDS
                             </span>
-                            <span className="w-0.5 h-0.5 md:w-1 md:h-1 rounded-full bg-slate-300"></span>
-                            <span className="whitespace-nowrap">{totalCount.toLocaleString()} Recs</span>
-                        </p>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
@@ -286,7 +284,7 @@ export default function SurveyStatsView() {
                 <div className="glass-panel overflow-hidden border-t border-slate-200 dark:border-white/5 flex-1 flex flex-col bg-white dark:bg-slate-900/50 min-h-0">
 
                     {/* Integrated Filter Bar (Desktop) */}
-                    <div className="hidden md:block px-6 py-4 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="hidden md:block px-4 py-2 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
                         {isFilterOpen ? (
                             <div className="flex flex-col md:flex-row gap-3 items-center">
                                 <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-5 gap-3">
@@ -302,28 +300,28 @@ export default function SurveyStatsView() {
                                     </div>
 
                                     <ModernDropdown
-                                        options={districts}
+                                        options={[{ label: 'ALL DISTRICTS', value: '' }, ...districts]}
                                         value={filters.district}
                                         onChange={(val) => setFilters(f => ({ ...f, district: val, tehsil: '', uc: '' }))}
                                         placeholder="DISTRICT"
                                     />
 
                                     <ModernDropdown
-                                        options={tehsils}
+                                        options={[{ label: 'ALL TEHSILS', value: '' }, ...tehsils]}
                                         value={filters.tehsil}
                                         onChange={(val) => setFilters(f => ({ ...f, tehsil: val, uc: '' }))}
                                         placeholder="TEHSIL"
                                     />
 
                                     <ModernDropdown
-                                        options={ucs}
+                                        options={[{ label: 'ALL UCS', value: '' }, ...ucs]}
                                         value={filters.uc}
                                         onChange={(val) => setFilters(f => ({ ...f, uc: val }))}
                                         placeholder="UC / AREA"
                                     />
 
                                     <ModernDropdown
-                                        options={surveyors}
+                                        options={[{ label: 'ALL SURVEYORS', value: '' }, ...surveyors]}
                                         value={filters.surveyor}
                                         onChange={(val) => setFilters(f => ({ ...f, surveyor: val }))}
                                         placeholder="SURVEYOR"
@@ -358,14 +356,14 @@ export default function SurveyStatsView() {
 
 
                     {/* Table Header */}
-                    <div className="grid grid-cols-12 gap-0 py-3 px-6 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 sticky top-0 z-10 shadow-sm">
+                    <div className="grid grid-cols-12 gap-0 py-2 px-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 sticky top-0 z-10 shadow-sm">
                         <div
-                            className={`col-span-2 md:col-span-2 lg:col-span-1 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 pl-6 group/sort ${sortConfig.key === 'id_numeric' ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
+                            className={`col-span-2 md:col-span-2 lg:col-span-1 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 pl-4 group/sort ${sortConfig.key === 'id_numeric' ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
                             onClick={() => toggleSort('id_numeric')}
                         >
                             ID <ArrowUpDown size={12} className={`transition-transform duration-300 ${sortConfig.key === 'id_numeric' && sortConfig.direction === 'asc' ? 'rotate-180 text-indigo-500' : 'opacity-40 group-hover/sort:opacity-100'}`} />
                         </div>
-                        <div className="col-span-7 md:col-span-4 lg:col-span-3 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Identity</div>
+                        <div className="col-span-7 md:col-span-4 lg:col-span-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Identity</div>
                         <div className="col-span-3 md:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</div>
                         <div className="hidden md:block md:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Finance</div>
                         <div className="hidden lg:block lg:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Billing</div>
@@ -383,10 +381,12 @@ export default function SurveyStatsView() {
                             ) : records.length > 0 ? (
                                 records.map(record => (
                                     <div key={record.survey_id} className="grid grid-cols-12 gap-0 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors items-center border-b border-slate-200/60 dark:border-white/[0.02] last:border-0">
-                                        <div className="col-span-2 md:col-span-2 lg:col-span-1 pl-6 py-2.5 pr-2">
-                                            <span className="text-base font-black text-indigo-500 tabular-nums drop-shadow-sm flex justify-center md:justify-start">{record.survey_id}</span>
+                                        <div className="col-span-2 md:col-span-2 lg:col-span-1 pl-4 py-1.5 pr-2 overflow-hidden">
+                                            <span className="text-xs md:text-sm lg:text-base font-black text-indigo-500 tabular-nums drop-shadow-sm flex justify-center md:justify-start truncate">
+                                                {record.survey_id}
+                                            </span>
                                         </div>
-                                        <div className="col-span-7 md:col-span-4 lg:col-span-3 pl-2 py-2.5" onClick={() => setSelectedSurveyId(record.survey_id)}>
+                                        <div className="col-span-7 md:col-span-4 lg:col-span-4 pl-2 py-1.5" onClick={() => setSelectedSurveyId(record.survey_id)}>
                                             <div className="flex flex-col cursor-pointer">
                                                 <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate max-w-[150px] md:max-w-none">{record.consumer_name || 'Anonymous'}</span>
                                                 <span className="hidden sm:flex text-[10px] text-slate-500 items-center gap-1 mt-1 font-medium italic opacity-80">
@@ -395,7 +395,7 @@ export default function SurveyStatsView() {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="col-span-3 md:col-span-2 px-4 py-2.5 flex flex-col items-center justify-center gap-1 border-x border-slate-200/60 dark:border-white/5">
+                                        <div className="col-span-3 md:col-span-2 px-2 py-1.5 flex flex-col items-center justify-center gap-1 border-x border-slate-200/60 dark:border-white/5">
                                             {record.status === 'ARCHIVED' ? (
                                                 <div className="px-2 py-0.5 rounded text-[8px] font-black bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">ARCHIVED</div>
                                             ) : record.is_biller ? (
@@ -404,7 +404,7 @@ export default function SurveyStatsView() {
                                                 <div className="px-2 py-0.5 rounded text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-white/10 shadow-[0_0_8px_rgba(100,116,139,0.1)]">NEW SURVEY</div>
                                             )}
                                         </div>
-                                        <div className="hidden md:flex md:col-span-2 px-6 py-2.5 flex flex-col items-center">
+                                        <div className="hidden md:flex md:col-span-2 px-4 py-1.5 flex flex-col items-center">
                                             <div className="text-sm font-bold text-slate-800 dark:text-slate-200 tabular-nums">
                                                 <CurrencyText amount={record.total_paid} />
                                             </div>
@@ -412,7 +412,7 @@ export default function SurveyStatsView() {
                                                 of <CurrencyText amount={record.total_due} />
                                             </div>
                                         </div>
-                                        <div className="hidden lg:flex lg:col-span-2 px-6 py-2.5 items-center justify-center gap-4">
+                                        <div className="hidden lg:flex lg:col-span-2 px-2 py-1.5 items-center justify-center gap-2">
                                             {record.history.map((h, hi) => (
                                                 <div key={hi} className="flex flex-col items-center gap-1.5 p-1.5 rounded-xl border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
                                                     <div className="flex flex-col gap-1 items-center">
@@ -425,7 +425,7 @@ export default function SurveyStatsView() {
                                                 </div>
                                             ))}
                                         </div>
-                                        <div className="hidden md:flex md:col-span-2 lg:col-span-1 px-6 py-2.5 justify-end">
+                                        <div className="hidden md:flex md:col-span-2 lg:col-span-1 px-4 py-1.5 justify-end">
                                             <button
                                                 onClick={() => setSelectedSurveyId(record.survey_id)}
                                                 className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
@@ -445,7 +445,7 @@ export default function SurveyStatsView() {
                         </div>
                     </div>
                     {/* Pagination & Status Footer */}
-                    <div className="py-2.5 px-4 md:px-6 pb-safe bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/5 flex items-center justify-between z-30 shrink-0">
+                    <div className="py-1.5 px-4 md:px-4 pb-1 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/5 flex items-center justify-between z-30 shrink-0">
                         <div className="hidden md:flex text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest items-center gap-4">
                             <span className="bg-slate-100 dark:bg-white/5 px-2 py-1 rounded">PAGE {pageIndex + 1} OF {Math.ceil(totalCount / PAGE_SIZE)}</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -530,15 +530,15 @@ export default function SurveyStatsView() {
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Location Strategy</p>
                                     <div className="space-y-3">
-                                        <ModernDropdown options={districts} value={filters.district} onChange={(val) => setFilters(f => ({ ...f, district: val, tehsil: '', uc: '' }))} placeholder="DISTRICT" />
-                                        <ModernDropdown options={tehsils} value={filters.tehsil} onChange={(val) => setFilters(f => ({ ...f, tehsil: val, uc: '' }))} placeholder="TEHSIL" />
-                                        <ModernDropdown options={ucs} value={filters.uc} onChange={(val) => setFilters(f => ({ ...f, uc: val }))} placeholder="UC / AREA" />
+                                        <ModernDropdown options={[{ label: 'ALL DISTRICTS', value: '' }, ...districts]} value={filters.district} onChange={(val) => setFilters(f => ({ ...f, district: val, tehsil: '', uc: '' }))} placeholder="DISTRICT" />
+                                        <ModernDropdown options={[{ label: 'ALL TEHSILS', value: '' }, ...tehsils]} value={filters.tehsil} onChange={(val) => setFilters(f => ({ ...f, tehsil: val, uc: '' }))} placeholder="TEHSIL" />
+                                        <ModernDropdown options={[{ label: 'ALL UCS', value: '' }, ...ucs]} value={filters.uc} onChange={(val) => setFilters(f => ({ ...f, uc: val }))} placeholder="UC / AREA" />
                                     </div>
                                 </div>
 
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Attribution</p>
-                                    <ModernDropdown options={surveyors} value={filters.surveyor} onChange={(val) => setFilters(f => ({ ...f, surveyor: val }))} placeholder="SURVEYOR" />
+                                    <ModernDropdown options={[{ label: 'ALL SURVEYORS', value: '' }, ...surveyors]} value={filters.surveyor} onChange={(val) => setFilters(f => ({ ...f, surveyor: val }))} placeholder="SURVEYOR" />
                                 </div>
                             </div>
 
