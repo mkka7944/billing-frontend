@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet'
+import React, { useEffect, useState, useMemo } from 'react'
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import MarkerClusterGroup from 'react-leaflet-cluster'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabaseClient'
@@ -44,9 +44,23 @@ function MapController({ selectedId, markers }) {
     return null
 }
 
+// Component to handle map-level events
+function MapEvents({ onClear }) {
+    useMapEvents({
+        click: (e) => {
+            // If we click the map background, clear selection
+            // Note: Leaflet events bubble, but CircleMarker click usually stops propagation
+            if (e.originalEvent.target.classList.contains('leaflet-container')) {
+                onClear()
+            }
+        },
+    })
+    return null
+}
+
 export default function Map() {
     const { query: searchQuery } = useSearch()
-    const { selectedSurveyId, setSelectedSurveyId } = useUI()
+    const { selectedSurveyId, setSelectedSurveyId, highlightedId, setHighlightedId, clearSelection } = useUI()
     const [markers, setMarkers] = useState([])
     const [loading, setLoading] = useState(true)
     const [mapType, setMapType] = useState('roads')
@@ -91,7 +105,12 @@ export default function Map() {
     }
 
     return (
-        <div className="w-full h-full bg-slate-50 relative">
+        <div className="w-full h-full bg-slate-50 relative" onClick={(e) => {
+            // Fallback for background click if Leaflet doesn't catch it cleanly
+            if (e.target.classList.contains('leaflet-container')) {
+                clearSelection()
+            }
+        }}>
             <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
                 <button
                     onClick={() => setMapType(mapType === 'roads' ? 'satellite' : 'roads')}
@@ -126,6 +145,7 @@ export default function Map() {
                 />
 
                 <MapController selectedId={selectedSurveyId} markers={markers} />
+                <MapEvents onClear={clearSelection} />
 
                 <MarkerClusterGroup
                     chunkedLoading
@@ -135,39 +155,64 @@ export default function Map() {
                     showCoverageOnHover={false}
                     spiderfyOnMaxZoom={true}
                 >
-                    {markers.map(m => (
-                        m.lat && m.lng ? (
-                            <CircleMarker
-                                key={m.survey_id}
-                                center={[m.lat, m.lng]}
-                                radius={m.survey_id === selectedSurveyId ? 8 : 4}
-                                pathOptions={{
-                                    fillColor: m.survey_id === selectedSurveyId ? '#ef4444' : '#6366f1',
-                                    fillOpacity: 0.6,
-                                    color: m.survey_id === selectedSurveyId ? '#fff' : '#fff',
-                                    weight: m.survey_id === selectedSurveyId ? 3 : 1,
-                                    stroke: true
-                                }}
-                                eventHandlers={{
-                                    click: () => setSelectedSurveyId(m.survey_id),
-                                }}
-                            >
-                                <Popup className="premium-popup">
-                                    <div className="p-1">
-                                        <div className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 mb-1">Survey Record</div>
-                                        <div className="font-bold text-slate-900 dark:text-slate-200">{m.consumer_name || 'No Name Found'}</div>
-                                        <div className="text-[10px] text-slate-500 dark:text-slate-500">ID: {m.survey_id}</div>
-                                        <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-1">
-                                            {formatLocationLabel(m.city_district, shortenAreaName(m.uc_name, m.city_district, m.tehsil))}
+                    {markers.map(m => {
+                        const isHighlighted = m.survey_id === highlightedId || m.survey_id === selectedSurveyId;
+                        if (!m.lat || !m.lng) return null;
+
+                        return (
+                            <React.Fragment key={m.survey_id}>
+                                {isHighlighted && (
+                                    <CircleMarker
+                                        center={[m.lat, m.lng]}
+                                        radius={15}
+                                        pathOptions={{
+                                            fillColor: '#ef4444',
+                                            fillOpacity: 0.4,
+                                            color: '#ef4444',
+                                            weight: 1,
+                                            stroke: true,
+                                            className: 'selected-marker-highlight'
+                                        }}
+                                        interactive={false}
+                                    />
+                                )}
+                                <CircleMarker
+                                    center={[m.lat, m.lng]}
+                                    radius={isHighlighted ? 10 : 4}
+                                    pathOptions={{
+                                        fillColor: isHighlighted ? '#ef4444' : '#6366f1',
+                                        fillOpacity: 0.8,
+                                        color: isHighlighted ? '#fff' : '#fff',
+                                        weight: isHighlighted ? 3 : 1,
+                                        stroke: true
+                                    }}
+                                    eventHandlers={{
+                                        click: (e) => {
+                                            setHighlightedId(m.survey_id);
+                                            // The popup will open automatically because it's a child components
+                                        },
+                                    }}
+                                >
+                                    <Popup className="premium-popup">
+                                        <div className="p-1">
+                                            <div className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 mb-1">Survey Record</div>
+                                            <div className="font-bold text-slate-900 dark:text-slate-200">{m.consumer_name || 'No Name Found'}</div>
+                                            <div className="text-[10px] text-slate-500 dark:text-slate-500">ID: {m.survey_id}</div>
+                                            <div className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-1">
+                                                {formatLocationLabel(m.city_district, shortenAreaName(m.uc_name, m.city_district, m.tehsil))}
+                                            </div>
+                                            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-white/5 text-[10px] text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-extrabold uppercase tracking-tight cursor-pointer" onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedSurveyId(m.survey_id);
+                                            }}>
+                                                <MapIcon size={10} /> View Full Report
+                                            </div>
                                         </div>
-                                        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-white/5 text-[10px] text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-extrabold uppercase tracking-tight cursor-pointer" onClick={() => setSelectedSurveyId(m.survey_id)}>
-                                            <MapIcon size={10} /> View Full Report
-                                        </div>
-                                    </div>
-                                </Popup>
-                            </CircleMarker>
-                        ) : null
-                    ))}
+                                    </Popup>
+                                </CircleMarker>
+                            </React.Fragment>
+                        );
+                    })}
                 </MarkerClusterGroup>
             </MapContainer>
         </div>

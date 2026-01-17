@@ -111,35 +111,38 @@ export default function RecordDetail({ surveyId, onClose }) {
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors">
-            {/* v2.9 Unified Header: Consistent Sizes for Mobile & Desktop */}
-            <div className="p-2 md:p-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/80 backdrop-blur-xl relative z-20 shrink-0">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0 flex-1 flex items-center gap-4">
-                        <h1 className="text-3xl font-display font-black text-slate-950 dark:text-white tracking-tighter tabular-nums drop-shadow-sm shrink-0">
-                            {surveyId}
-                        </h1>
+            {/* v3.1 Precision Header: Normalized Heights & Clean Pills */}
+            <div className="px-4 py-3 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/80 backdrop-blur-xl relative z-20 shrink-0">
+                <div className="flex items-center gap-3 h-12">
+                    {/* Survey ID */}
+                    <h1 className="text-3xl font-display font-black text-slate-950 dark:text-white tracking-tighter tabular-nums drop-shadow-sm shrink-0 leading-none mr-1">
+                        {surveyId}
+                    </h1>
 
-                        <div className="flex items-center gap-2 overflow-hidden py-1">
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 rounded-full border border-indigo-500/10 shrink-0 shadow-sm">
-                                <User size={10} className="text-indigo-500" />
-                                <span className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest leading-none">
-                                    {data?.surveyor_name || 'AUTO'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-white/5 shrink-0 shadow-sm">
-                                <Calendar size={10} className="text-slate-400" />
-                                <span className="text-[8px] font-black text-slate-500 dark:text-slate-400 tabular-nums leading-none">
-                                    {data?.survey_date}
-                                </span>
-                            </div>
+                    <div className="flex-1 flex items-center gap-2 min-w-0 h-full">
+                        {/* Surveyor Name Pill - Dominant Width */}
+                        <div className="flex-[2] min-w-0 h-full flex items-center px-4 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                            <span className="text-[10px] md:text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest leading-tight truncate">
+                                {data?.surveyor_name || 'AUTO'}
+                            </span>
+                        </div>
+
+                        {/* Combined Date & Time Pill - Compact Width */}
+                        <div className="w-24 md:w-28 h-full flex flex-col justify-center items-center px-2 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-white/5 shrink-0 shadow-sm overflow-hidden">
+                            <span className="text-[9px] font-black text-slate-600 dark:text-slate-300 tabular-nums leading-none mb-0.5">
+                                {data?.survey_date || 'N/A'}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 tabular-nums leading-none">
+                                {data?.survey_time || '--:--'}
+                            </span>
                         </div>
                     </div>
 
                     <button
                         onClick={onClose}
-                        className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 transition-all active:scale-90 border border-slate-200 dark:border-white/5 shrink-0"
+                        className="h-12 w-12 flex items-center justify-center bg-slate-50 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-slate-400 transition-all active:scale-90 border border-slate-200 dark:border-white/5 shrink-0"
                     >
-                        <X size={18} />
+                        <X size={20} />
                     </button>
                 </div>
             </div>
@@ -216,20 +219,49 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 </AnimatePresence>
                             </div>
 
-                            {/* Thumbnails Strip */}
-                            {data.image_urls && data.image_urls.length > 1 && (
-                                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
-                                    {data.image_urls.map((url, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setActiveImage(i)}
-                                            className={`shrink-0 relative w-12 h-12 rounded-lg overflow-hidden transition-all border-2 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                                        >
-                                            <img src={url} className="w-full h-full object-cover" loading="lazy" />
-                                        </button>
+                            {/* v3.0 Scrollable Image Gallery with Navigation & Placeholders */}
+                            <div className="relative mt-4 group">
+                                <div id="gallery-container" className="flex gap-3 overflow-hidden pb-4 scroll-smooth snap-x">
+                                    {/* Real Images from Portal */}
+                                    {data.image_urls && data.image_urls.map((url, i) => (
+                                        <div key={`img-${i}`} className="flex flex-col items-center gap-1.5 shrink-0 snap-start">
+                                            <button
+                                                onClick={() => setActiveImage(i)}
+                                                className={`relative w-16 h-16 rounded-xl overflow-hidden transition-all border-2 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-xl ring-4 ring-indigo-500/10' : 'border-slate-200 dark:border-white/5 opacity-70 hover:opacity-100 hover:border-slate-300'}`}
+                                            >
+                                                <img src={url} className="w-full h-full object-cover" loading="lazy" />
+                                            </button>
+                                            <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">from portal</span>
+                                        </div>
+                                    ))}
+
+                                    {/* Empty Placeholder Slots */}
+                                    {[...Array(8)].map((_, i) => (
+                                        <div key={`empty-${i}`} className="flex flex-col items-center gap-1.5 shrink-0 snap-start">
+                                            <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-center transition-colors">
+                                                <ImageIcon size={20} className="text-slate-200 dark:text-slate-800" />
+                                            </div>
+                                            <span className="text-[9px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-tight">empty</span>
+                                        </div>
                                     ))}
                                 </div>
-                            )}
+
+                                {/* Custom Navigation Buttons (Visible when hovering or always on mobile touch) */}
+                                <div className="absolute top-1/2 -translate-y-[22px] left-0 right-0 flex justify-between pointer-events-none px-1">
+                                    <button
+                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: -200, behavior: 'smooth' })}
+                                        className="w-8 h-8 flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: 200, behavior: 'smooth' })}
+                                        className="w-8 h-8 flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity active:scale-90"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Financial Summary Overlay Cards - Always visible */}
