@@ -111,15 +111,15 @@ export default function RecordDetail({ surveyId, onClose }) {
 
     return (
         <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors font-sans">
-            {/* v4.7 Monolith Header: High-Precision Uniformity */}
-            <div className="bg-white dark:bg-slate-900 relative z-20 shrink-0 overflow-hidden">
+            {/* v4.12 Calibrated Header */}
+            <div className="bg-white dark:bg-slate-900 relative z-30 shrink-0">
                 <div className="flex items-stretch h-14 border-b border-slate-200 dark:border-white/5">
-                    {/* ID Segment - Matching Close Button Style with Black Text */}
+                    {/* ID Segment - Reverted size */}
                     <div className="px-6 flex items-center bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shrink-0 font-display font-black tracking-tighter tabular-nums leading-none text-xl md:text-2xl">
                         {surveyId}
                     </div>
 
-                    {/* Metadata Segment - Clean No-Margin Fill */}
+                    {/* Metadata Segment - Calibrated Typography */}
                     <div className="flex-1 flex items-center px-4 gap-4 min-w-0 bg-slate-50/10 dark:bg-slate-900 border-x border-slate-200 dark:border-white/10">
                         <div className="flex-1 min-w-0">
                             <span className="text-[10px] md:text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-tight overflow-hidden break-words block max-h-8">
@@ -127,7 +127,7 @@ export default function RecordDetail({ surveyId, onClose }) {
                             </span>
                         </div>
 
-                        {/* Date/Time - Minimal Indigo Accents */}
+                        {/* Date/Time - Calibrated */}
                         <div className="flex flex-col items-end shrink-0 border-l border-slate-200 dark:border-white/10 pl-4 h-8 justify-center">
                             <span className="text-[11px] font-black text-indigo-500 tabular-nums leading-none mb-0.5">
                                 {data?.survey_date || 'N/A'}
@@ -138,7 +138,6 @@ export default function RecordDetail({ surveyId, onClose }) {
                         </div>
                     </div>
 
-                    {/* Integrated Close Action - Uniform Style */}
                     <button
                         onClick={onClose}
                         className="w-14 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all active:scale-95 shrink-0"
@@ -151,14 +150,14 @@ export default function RecordDetail({ surveyId, onClose }) {
             {loading ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-3">
                     <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-800 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <span className="text-xs text-slate-500 font-medium font-display tracking-widest uppercase">Precision Tuning...</span>
+                    <span className="text-xs text-slate-500 font-medium font-display tracking-widest uppercase">Calibrating Scale...</span>
                 </div>
             ) : data ? (
                 <>
                     <div className="flex-1 overflow-y-auto scrollbar-hide no-scrollbar">
-                        {/* v4.7 Full-Width Seamless Hero */}
+                        {/* v4.10 Compact Hero + Navigation Restoration */}
                         <div
-                            className="relative h-64 md:h-80 overflow-hidden bg-white dark:bg-slate-900 group cursor-zoom-in"
+                            className="relative h-[340px] overflow-hidden bg-white dark:bg-slate-900 group cursor-zoom-in"
                             onClick={() => setIsGalleryOpen(true)}
                         >
                             <AnimatePresence mode="wait">
@@ -170,37 +169,86 @@ export default function RecordDetail({ surveyId, onClose }) {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
+                                            transition={{ duration: 0.4 }}
                                             className="w-full h-full object-cover"
                                         />
 
-                                        {/* Regional Overlay */}
-                                        <div className="absolute top-4 right-0 p-4 w-3/4 max-w-[220px] bg-gradient-to-bl from-black/80 via-black/50 to-transparent flex flex-col items-end pointer-events-none rounded-tl-2xl rounded-bl-2xl">
-                                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1.5">
-                                                {data?.city_district}
-                                            </span>
-                                            <span className="text-[11px] font-black text-white uppercase tracking-tight text-right leading-[1.2] break-words max-w-full">
-                                                {data?.uc_name}
-                                                <span className="block text-[8px] text-indigo-400 font-bold mt-1 tracking-widest">{data?.tehsil}</span>
-                                            </span>
-                                        </div>
-
-                                        {/* Identity Overlay */}
-                                        <div className="absolute bottom-4 left-0 p-5 bg-gradient-to-tr from-black/80 via-black/50 to-transparent flex flex-col gap-1 pointer-events-none rounded-tr-2xl rounded-br-2xl">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <div className="bg-indigo-600/90 backdrop-blur-md text-[8px] font-black text-white px-2 py-1 rounded leading-none uppercase tracking-[0.2em]">
+                                        {/* v4.15 Edge-to-Edge Symmetrical Overlays - Ultra Transparent (v4.7 Style) */}
+                                        <div className="absolute top-2 left-0 right-0 px-0 flex justify-between items-start pointer-events-none z-20">
+                                            {/* Identity Overlay - Touching Left Edge */}
+                                            <div className="p-3 max-w-[220px] bg-gradient-to-r from-black/20 via-black/10 to-transparent backdrop-blur-md flex flex-col gap-0.5 pointer-events-none rounded-r-xl border-r border-y border-white/5 shadow-2xl">
+                                                <div className="bg-indigo-600/70 text-[7px] font-black text-white px-1.5 py-0.5 rounded leading-none uppercase tracking-[0.2em] w-fit mb-1">
                                                     IMAGE {activeImage + 1} / {data.image_urls.length}
                                                 </div>
+                                                <h3 className="text-base font-bold text-white tracking-tight leading-none mb-0.5">{data.consumer_name || 'Anonymous'}</h3>
+                                                <p className="text-[9px] font-medium text-white/60 flex items-center gap-1.5 leading-tight max-w-[190px]">
+                                                    <MapPin size={9} className="text-indigo-400/80 shrink-0" />
+                                                    {data.address || 'Address unverified'}
+                                                </p>
                                             </div>
-                                            <h3 className="text-lg font-bold text-white tracking-tight">{data.consumer_name || 'Anonymous Consumer'}</h3>
-                                            <p className="text-[11px] font-medium text-white/80 flex items-center gap-1.5 leading-tight max-w-[240px]">
-                                                <MapPin size={11} className="text-indigo-400 shrink-0" />
-                                                {data.address || 'Address unverified'}
-                                            </p>
+
+                                            {/* Regional Overlay - Touching Right Edge */}
+                                            <div className="p-3 max-w-[200px] bg-gradient-to-l from-black/20 via-black/10 to-transparent backdrop-blur-md flex flex-col items-end pointer-events-none rounded-l-xl border-l border-y border-white/5 shadow-2xl">
+                                                <span className="text-[11px] font-black text-white uppercase tracking-tight text-right leading-tight break-words max-w-full drop-shadow-sm">
+                                                    {data?.uc_name}
+                                                    <span className="block text-[8px] text-indigo-400/80 font-bold mt-0.5 tracking-widest">{data?.tehsil}</span>
+                                                </span>
+                                            </div>
                                         </div>
 
-                                        <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md p-2 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                                            <Maximize2 size={16} className="text-white" />
+                                        {/* v4.15 Floating Filmstrip - Zero Margin + Absolute Clipping Resolution (px-32) */}
+                                        <div className="absolute bottom-2 left-0 right-0 p-2 bg-black/10 backdrop-blur-[2px] rounded-2xl z-30 border border-white/5 group/filmstrip mx-2">
+                                            <div className="relative">
+                                                <div
+                                                    id="gallery-container"
+                                                    className="flex gap-3 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1 px-32"
+                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                                >
+                                                    {data.image_urls.map((url, i) => (
+                                                        <button
+                                                            key={`img-${i}`}
+                                                            onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                                                            className="shrink-0 snap-start relative transition-all"
+                                                        >
+                                                            {/* Flat border, no shadow-xl or inner effects */}
+                                                            <div className={`relative w-[56px] h-[56px] rounded-xl overflow-hidden border-2 transition-all duration-300 ${i === activeImage ? 'border-white scale-110 z-10' : 'border-white/10 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 hover:border-white/30'}`}>
+                                                                <img src={url} className="w-full h-full object-cover" loading="lazy" />
+                                                                <div className={`absolute bottom-0 left-0 right-0 py-0.5 text-[5px] font-black text-center uppercase tracking-widest backdrop-blur-md ${i === activeImage ? 'bg-white text-black' : 'bg-black/40 text-white/70'}`}>
+                                                                    portal
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                    {/* Restored Empty States - Restored to 56px */}
+                                                    {[...Array(8)].map((_, i) => (
+                                                        <div key={`empty-${i}`} className="shrink-0 snap-start p-0.5 opacity-20">
+                                                            <div className="w-[56px] h-[56px] rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center bg-white/5">
+                                                                <ImageIcon size={10} className="text-white/40" />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Restored Navigation Arrows */}
+                                                <div className="absolute top-1/2 -translate-y-1/2 -left-2 -right-2 flex justify-between pointer-events-none">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' }); }}
+                                                        className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white pointer-events-auto opacity-0 group-hover/filmstrip:opacity-100 transition-all border border-white/10 hover:bg-white/20"
+                                                    >
+                                                        <ChevronLeft size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' }); }}
+                                                        className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white pointer-events-auto opacity-0 group-hover/filmstrip:opacity-100 transition-all border border-white/10 hover:bg-white/20"
+                                                    >
+                                                        <ChevronRight size={16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md p-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 z-20">
+                                            <Maximize2 size={14} className="text-white" />
                                         </div>
                                     </>
                                 ) : (
@@ -213,66 +261,7 @@ export default function RecordDetail({ surveyId, onClose }) {
                         </div>
 
                         <div className="p-4 space-y-4">
-                            {/* v4.7 Modern Filmstrip Gallery: High-Contrast Empty States */}
-                            <div className="relative group">
-                                <div
-                                    id="gallery-container"
-                                    className="flex gap-2.5 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1"
-                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                >
-                                    {/* Real Images */}
-                                    {data.image_urls && data.image_urls.map((url, i) => (
-                                        <button
-                                            key={`img-${i}`}
-                                            onClick={() => setActiveImage(i)}
-                                            className="shrink-0 snap-start group/thumb relative transition-all"
-                                        >
-                                            <div className={`relative w-[72px] h-[72px] rounded-xl overflow-hidden border-2 transition-all duration-300 ${i === activeImage ? 'border-indigo-500 scale-105 shadow-lg z-10' : 'border-transparent grayscale opacity-70 hover:opacity-100 hover:grayscale-0'}`}>
-                                                <img src={url} className="w-full h-full object-cover" loading="lazy" />
-
-                                                {/* Micro-Badge Overlay */}
-                                                <div className={`absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter backdrop-blur-md border ${i === activeImage ? 'bg-indigo-600/90 text-white border-white/20' : 'bg-black/60 text-white/70 border-white/10'}`}>
-                                                    portal
-                                                </div>
-
-                                                {/* Selection Check Accent */}
-                                                {i === activeImage && (
-                                                    <div className="absolute top-1 left-1 bg-indigo-500/90 rounded-full p-0.5 border border-white/20">
-                                                        <ImageIcon size={6} className="text-white" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </button>
-                                    ))}
-                                    {/* Darker Empty State Borders */}
-                                    {[...Array(8)].map((_, i) => (
-                                        <div key={`empty-${i}`} className="shrink-0 snap-start p-0.5 pointer-events-none">
-                                            <div className="w-[72px] h-[72px] rounded-xl border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-100/30 dark:bg-slate-800/20 flex flex-col items-center justify-center gap-1.5 opacity-40">
-                                                <ImageIcon size={14} className="text-slate-400 dark:text-slate-500" />
-                                                <span className="text-[6px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Void</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Floating Navigation */}
-                                <div className="absolute top-1/2 -translate-y-1/2 -left-2 -right-2 flex justify-between pointer-events-none px-1">
-                                    <button
-                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' })}
-                                        className="w-9 h-9 flex items-center justify-center bg-white/95 dark:bg-slate-900/95 rounded-full shadow-xl text-slate-500 hover:text-indigo-500 pointer-events-auto opacity-0 group-hover:opacity-100 transition-all border border-slate-200 dark:border-white/5"
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' })}
-                                        className="w-9 h-9 flex items-center justify-center bg-white/95 dark:bg-slate-900/95 rounded-full shadow-xl text-slate-500 hover:text-indigo-500 pointer-events-auto opacity-0 group-hover:opacity-100 transition-all border border-slate-200 dark:border-white/5"
-                                    >
-                                        <ChevronRight size={16} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Financial Bento Tiles */}
+                            {/* Financial Bento Tiles - Calibrated */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
                                     <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Outstanding</span>
@@ -294,7 +283,7 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 </div>
                             </div>
 
-                            {/* Transaction Bento Module */}
+                            {/* Transaction Bento Module - Calibrated */}
                             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm flex flex-col overflow-hidden">
                                 <div className="px-5 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -330,11 +319,11 @@ export default function RecordDetail({ surveyId, onClose }) {
                                                 <div className="flex items-center justify-between mt-4">
                                                     <div className="flex flex-col">
                                                         <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Amount Due</span>
-                                                        <CurrencyText amount={bill.amount_due} />
+                                                        <div className="text-sm font-bold"><CurrencyText amount={bill.amount_due} /></div>
                                                     </div>
                                                     <div className="flex flex-col text-right">
                                                         <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Paid</span>
-                                                        <div className={bill.payment_status === 'PAID' ? 'text-emerald-500 font-bold' : 'text-slate-400 font-medium'}>
+                                                        <div className={`text-sm ${bill.payment_status === 'PAID' ? 'text-emerald-500 font-bold' : 'text-slate-400 font-medium'}`}>
                                                             <CurrencyText amount={bill.amount_paid || 0} currency={null} />
                                                         </div>
                                                     </div>
@@ -352,13 +341,13 @@ export default function RecordDetail({ surveyId, onClose }) {
                         <div className="h-24" />
                     </div>
 
-                    {/* v4.7 Floating Footer: Subtle Transparent Actions */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-t border-slate-200 dark:border-white/5 z-30">
-                        <div className="grid grid-cols-2 gap-3">
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 text-xs font-black transition-all border border-rose-100 dark:border-rose-500/20 active:scale-95 uppercase tracking-widest">
+                    {/* v4.12 Floating Footer - Calibrated */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-t border-slate-200 dark:border-white/5 z-40">
+                        <div className="grid grid-cols-2 gap-4">
+                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-2xl text-rose-600 dark:text-rose-400 text-xs font-black transition-all border border-rose-200/50 dark:border-rose-500/20 active:scale-95 uppercase tracking-widest shadow-sm">
                                 <AlertCircle size={14} /> Log Ticket
                             </button>
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-sky-50 dark:bg-sky-500/10 hover:bg-sky-100 dark:hover:bg-sky-500/20 rounded-xl text-sky-600 dark:text-sky-400 text-xs font-black transition-all border border-sky-100 dark:border-sky-500/20 active:scale-95 uppercase tracking-widest">
+                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-transparent hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-2xl text-sky-600 dark:text-sky-400 text-xs font-black transition-all border border-sky-200/50 dark:border-sky-500/20 active:scale-95 uppercase tracking-widest shadow-sm">
                                 <ExternalLink size={14} /> Site Visit
                             </button>
                         </div>
