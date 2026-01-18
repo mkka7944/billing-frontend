@@ -173,83 +173,93 @@ export default function RecordDetail({ surveyId, onClose }) {
                                             className="w-full h-full object-cover"
                                         />
 
-                                        {/* v4.15 Edge-to-Edge Symmetrical Overlays - Ultra Transparent (v4.7 Style) */}
-                                        <div className="absolute top-2 left-0 right-0 px-0 flex justify-between items-start pointer-events-none z-20">
-                                            {/* Identity Overlay - Touching Left Edge */}
-                                            <div className="p-3 max-w-[220px] bg-gradient-to-r from-black/20 via-black/10 to-transparent backdrop-blur-md flex flex-col gap-0.5 pointer-events-none rounded-r-xl border-r border-y border-white/5 shadow-2xl">
-                                                <div className="bg-indigo-600/70 text-[7px] font-black text-white px-1.5 py-0.5 rounded leading-none uppercase tracking-[0.2em] w-fit mb-1">
+                                        {/* v4.20 Legibility Scrim - Soft top gradient for text contrast */}
+                                        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 via-black/10 to-transparent pointer-events-none z-10" />
+
+                                        {/* v4.20 Moved Zoom Button - Top Left Integrated */}
+                                        <div
+                                            className="absolute top-20 left-4 bg-white/10 backdrop-blur-xl p-2 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 z-40 shadow-xl cursor-pointer hover:bg-white/20 active:scale-95"
+                                            onClick={(e) => { e.stopPropagation(); setIsGalleryOpen(true); }}
+                                        >
+                                            <Maximize2 size={16} className="text-white drop-shadow-md" />
+                                        </div>
+
+                                        {/* v4.19 Ultra-Subtle Overlays - Edge-Touching & Transparent */}
+                                        <div className="absolute top-0 left-0 right-0 px-0 flex justify-between items-start pointer-events-none z-20">
+                                            {/* Identity Overlay */}
+                                            <div className="p-4 max-w-[260px] bg-black/5 backdrop-blur-[2px] flex flex-col gap-0.5 pointer-events-none rounded-br-2xl border-r border-b border-white/5">
+                                                <div className="bg-white/10 backdrop-blur-sm text-[7px] font-black text-white px-1.5 py-0.5 rounded leading-none uppercase tracking-[0.2em] w-fit mb-1 border border-white/5">
                                                     IMAGE {activeImage + 1} / {data.image_urls.length}
                                                 </div>
-                                                <h3 className="text-base font-bold text-white tracking-tight leading-none mb-0.5">{data.consumer_name || 'Anonymous'}</h3>
-                                                <p className="text-[9px] font-medium text-white/60 flex items-center gap-1.5 leading-tight max-w-[190px]">
-                                                    <MapPin size={9} className="text-indigo-400/80 shrink-0" />
+                                                <h3 className="text-base font-bold text-white tracking-tight leading-none mb-0.5 drop-shadow-lg">{data.consumer_name || 'Anonymous'}</h3>
+                                                <p className="text-[10px] font-medium text-white/70 flex items-center gap-1.5 leading-tight max-w-[220px] drop-shadow-md">
+                                                    <MapPin size={10} className="text-white/40 shrink-0" />
                                                     {data.address || 'Address unverified'}
                                                 </p>
                                             </div>
 
-                                            {/* Regional Overlay - Touching Right Edge */}
-                                            <div className="p-3 max-w-[200px] bg-gradient-to-l from-black/20 via-black/10 to-transparent backdrop-blur-md flex flex-col items-end pointer-events-none rounded-l-xl border-l border-y border-white/5 shadow-2xl">
-                                                <span className="text-[11px] font-black text-white uppercase tracking-tight text-right leading-tight break-words max-w-full drop-shadow-sm">
+                                            {/* Regional Overlay */}
+                                            <div className="p-4 max-w-[200px] bg-black/5 backdrop-blur-[2px] flex flex-col items-end pointer-events-none rounded-bl-2xl border-l border-b border-white/5">
+                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-tight text-right leading-tight break-words max-w-full drop-shadow-lg">
                                                     {data?.uc_name}
-                                                    <span className="block text-[8px] text-indigo-400/80 font-bold mt-0.5 tracking-widest">{data?.tehsil}</span>
+                                                    <span className="block text-[8px] text-white/40 font-bold mt-1 tracking-widest drop-shadow-md">{data?.tehsil}</span>
                                                 </span>
                                             </div>
                                         </div>
 
-                                        {/* v4.15 Floating Filmstrip - Zero Margin + Absolute Clipping Resolution (px-32) */}
-                                        <div className="absolute bottom-2 left-0 right-0 p-2 bg-black/10 backdrop-blur-[2px] rounded-2xl z-30 border border-white/5 group/filmstrip mx-2">
-                                            <div className="relative">
+                                        {/* v4.19 Fixed-Navigation Filmstrip - 3-Column Layout & Compact Geometry */}
+                                        <div className="absolute bottom-2 left-0 right-0 p-1 bg-black/5 backdrop-blur-[2px] rounded-2xl z-30 border border-white/5 mx-2 flex items-center">
+                                            {/* Fixed Left Navigation */}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' }); }}
+                                                className="w-8 h-14 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all rounded-l-xl border-r border-white/5 shrink-0"
+                                            >
+                                                <ChevronLeft size={16} />
+                                            </button>
+
+                                            {/* Scrollable Gallery Lane */}
+                                            <div className="flex-1 relative overflow-hidden h-14 flex items-center">
                                                 <div
                                                     id="gallery-container"
-                                                    className="flex gap-3 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1 px-32"
+                                                    className="flex gap-3 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1 px-12 items-center h-full"
                                                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                                                 >
+                                                    {/* v4.20 Geometry Fix: Start Spacer */}
+                                                    <div className="shrink-0 w-6" />
                                                     {data.image_urls.map((url, i) => (
                                                         <button
                                                             key={`img-${i}`}
                                                             onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
                                                             className="shrink-0 snap-start relative transition-all"
                                                         >
-                                                            {/* Flat border, no shadow-xl or inner effects */}
-                                                            <div className={`relative w-[56px] h-[56px] rounded-xl overflow-hidden border-2 transition-all duration-300 ${i === activeImage ? 'border-white scale-110 z-10' : 'border-white/10 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 hover:border-white/30'}`}>
+                                                            <div className={`relative w-[48px] h-[48px] rounded-lg overflow-hidden border transition-all duration-300 ${i === activeImage ? 'border-white scale-110 z-10' : 'border-white/10 grayscale opacity-40 hover:opacity-100 hover:grayscale-0 hover:border-white/30'}`}>
                                                                 <img src={url} className="w-full h-full object-cover" loading="lazy" />
-                                                                <div className={`absolute bottom-0 left-0 right-0 py-0.5 text-[5px] font-black text-center uppercase tracking-widest backdrop-blur-md ${i === activeImage ? 'bg-white text-black' : 'bg-black/40 text-white/70'}`}>
-                                                                    portal
-                                                                </div>
                                                             </div>
                                                         </button>
                                                     ))}
-                                                    {/* Restored Empty States - Restored to 56px */}
+                                                    {/* Compact Empty States */}
                                                     {[...Array(8)].map((_, i) => (
-                                                        <div key={`empty-${i}`} className="shrink-0 snap-start p-0.5 opacity-20">
-                                                            <div className="w-[56px] h-[56px] rounded-xl border-2 border-dashed border-white/30 flex items-center justify-center bg-white/5">
-                                                                <ImageIcon size={10} className="text-white/40" />
+                                                        <div key={`empty-${i}`} className="shrink-0 snap-start opacity-10">
+                                                            <div className="w-[48px] h-[48px] rounded-lg border border-dashed border-white/30 flex items-center justify-center bg-white/5">
+                                                                <ImageIcon size={8} className="text-white/40" />
                                                             </div>
                                                         </div>
                                                     ))}
-                                                </div>
-
-                                                {/* Restored Navigation Arrows */}
-                                                <div className="absolute top-1/2 -translate-y-1/2 -left-2 -right-2 flex justify-between pointer-events-none">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' }); }}
-                                                        className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white pointer-events-auto opacity-0 group-hover/filmstrip:opacity-100 transition-all border border-white/10 hover:bg-white/20"
-                                                    >
-                                                        <ChevronLeft size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' }); }}
-                                                        className="w-8 h-8 flex items-center justify-center bg-white/10 backdrop-blur-md rounded-full text-white pointer-events-auto opacity-0 group-hover/filmstrip:opacity-100 transition-all border border-white/10 hover:bg-white/20"
-                                                    >
-                                                        <ChevronRight size={16} />
-                                                    </button>
+                                                    {/* v4.20 Geometry Fix: End Spacer */}
+                                                    <div className="shrink-0 w-6" />
                                                 </div>
                                             </div>
+
+                                            {/* Fixed Right Navigation */}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' }); }}
+                                                className="w-8 h-14 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all rounded-r-xl border-l border-white/5 shrink-0"
+                                            >
+                                                <ChevronRight size={16} />
+                                            </button>
                                         </div>
 
-                                        <div className="absolute top-6 left-6 bg-white/10 backdrop-blur-md p-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 z-20">
-                                            <Maximize2 size={14} className="text-white" />
-                                        </div>
+                                        {/* Zoom Button removed from here (v4.20) */}
                                     </>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-200 dark:text-slate-800">
