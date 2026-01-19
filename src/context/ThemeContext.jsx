@@ -1,100 +1,140 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 const ThemeContext = createContext();
 
-const THEME_COLORS = {
+/**
+ * SURFACE_PALETTES: Defines the background "DNA" of the app.
+ */
+const SURFACE_PALETTES = {
+    antigravity: {
+        name: 'Antigravity Pro',
+        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 100%' },
+        dark: { background: '240 5% 10%', secondary: '240 5% 7%', card: '240 5% 14%', border: '240 5% 18%' }
+    },
+    cloud: {
+        name: 'Cloud Paper', // Ultra-clean light mode
+        light: { background: '0 0% 100%', secondary: '210 20% 98%', card: '0 0% 100%', border: '210 20% 90%' },
+        dark: { background: '210 20% 4%', secondary: '210 20% 2%', card: '210 20% 6%', border: '210 10% 12%' }
+    },
+    ivory: {
+        name: 'Soft Ivory', // Warm-toned light mode
+        light: { background: '45 20% 99%', secondary: '45 15% 96%', card: '0 0% 100%', border: '45 10% 90%' },
+        dark: { background: '45 10% 4%', secondary: '45 10% 2%', card: '45 10% 6%', border: '45 5% 12%' }
+    },
     zinc: {
-        light: { primary: '240 5.9% 10%', ring: '240 5.9% 10%' },
-        dark: { primary: '0 0% 98%', ring: '0 0% 98%' }
+        name: 'Industrial Zinc',
+        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 90%' },
+        dark: { background: '240 10% 4%', secondary: '240 10% 2%', card: '240 10% 6%', border: '240 5% 12%' }
     },
-    slate: {
-        light: { primary: '215 16% 47%', ring: '215 16% 47%' },
-        dark: { primary: '215 20% 65%', ring: '215 20% 65%' }
+    obsidian: {
+        name: 'Onyx Void',
+        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 90%' },
+        dark: { background: '0 0% 0%', secondary: '0 0% 5%', card: '0 0% 8%', border: '0 0% 12%' }
     },
-    stone: {
-        light: { primary: '25 5.3% 44.7%', ring: '25 5.3% 44.7%' },
-        dark: { primary: '33 5.5% 81%', ring: '33 5.5% 81%' }
+    emerald: {
+        name: 'Himalayan Ridge',
+        light: { background: '142.1 40% 99%', secondary: '142.1 30% 96%', card: '0 0% 100%', border: '142.1 30% 92%' },
+        dark: { background: '142.1 60% 3%', secondary: '142.1 50% 8%', card: '142.1 40% 5%', border: '142.1 50% 10%' }
+    }
+};
+
+/**
+ * ACCENT_COLORS: Defines Buttons, Tints, and highlights.
+ */
+const ACCENT_COLORS = {
+    indigo: {
+        name: 'Quantum Indigo',
+        light: { primary: '239 84% 67%', foreground: '0 0% 100%' },
+        dark: { primary: '239 84% 67%', foreground: '0 0% 100%' }
     },
-    gray: {
-        light: { primary: '220 9% 46%', ring: '240 5% 64.9%' },
-        dark: { primary: '220 9% 46%', ring: '240 5% 64.9%' }
+    sky: {
+        name: 'Sky Blue',
+        light: { primary: '199 89% 48%', foreground: '0 0% 100%' },
+        dark: { primary: '199 89% 48%', foreground: '0 0% 100%' }
     },
-    neutral: {
-        light: { primary: '0 0% 45%', ring: '0 0% 45%' },
-        dark: { primary: '0 0% 64%', ring: '0 0% 64%' }
-    },
-    red: {
-        light: { primary: '0 72.2% 50.6%', ring: '0 72.2% 50.6%' },
-        dark: { primary: '0 72.2% 50.6%', ring: '0 72.2% 50.6%' }
+    emerald: {
+        name: 'Bio-Green',
+        light: { primary: '142 71% 45%', foreground: '0 0% 100%' },
+        dark: { primary: '142 71% 45%', foreground: '0 0% 100%' }
     },
     rose: {
-        light: { primary: '346.8 77.2% 49.8%', ring: '346.8 77.2% 49.8%' },
-        dark: { primary: '346.8 77.2% 49.8%', ring: '346.8 77.2% 49.8%' }
+        name: 'Cyber Rose',
+        light: { primary: '347 77% 50%', foreground: '0 0% 100%' },
+        dark: { primary: '347 77% 50%', foreground: '0 0% 100%' }
     },
-    orange: {
-        light: { primary: '24.6 95% 53.1%', ring: '24.6 95% 53.1%' },
-        dark: { primary: '20.5 90.2% 48.2%', ring: '20.5 90.2% 48.2%' }
+    amber: {
+        name: 'Atomic Amber',
+        light: { primary: '38 92% 50%', foreground: '0 0% 100%' },
+        dark: { primary: '38 92% 50%', foreground: '38 92% 5%' }
     },
-    green: {
-        light: { primary: '142.1 76% 36.3%', ring: '142.1 76% 36.3%' },
-        dark: { primary: '142.1 70.6% 45.3%', ring: '142.1 70.6% 45.3%' }
+    steel: {
+        name: 'Steel Grey', // New Neutral Gray
+        light: { primary: '210 10% 40%', foreground: '0 0% 100%' },
+        dark: { primary: '210 10% 60%', foreground: '210 10% 10%' }
     },
-    blue: {
-        light: { primary: '221.2 83.2% 53.3%', ring: '221.2 83.2% 53.3%' },
-        dark: { primary: '217.2 91.2% 59.8%', ring: '217.2 91.2% 59.8%' }
+    slate_grey: {
+        name: 'Cool Slate', // New Blue-ish Gray
+        light: { primary: '215 15% 45%', foreground: '0 0% 100%' },
+        dark: { primary: '215 20% 65%', foreground: '215 20% 10%' }
     },
-    yellow: {
-        light: { primary: '47.9 95.8% 53.1%', ring: '47.9 95.8% 53.1%' },
-        dark: { primary: '47.9 95.8% 53.1%', ring: '47.9 95.8% 53.1%' }
+    graphite: {
+        name: 'Lead Graphite', // New Dark Gray
+        light: { primary: '240 6% 25%', foreground: '0 0% 98%' },
+        dark: { primary: '240 6% 45%', foreground: '240 6% 5%' }
     },
-    violet: {
-        light: { primary: '262.1 83.3% 57.8%', ring: '262.1 83.3% 57.8%' },
-        dark: { primary: '263.4 70% 50.4%', ring: '263.4 70% 50.4%' }
-    },
-}
+    zinc: {
+        name: 'Basic Lead',
+        light: { primary: '240 6% 10%', foreground: '0 0% 98%' },
+        dark: { primary: '0 0% 98%', foreground: '240 6% 10%' }
+    }
+};
 
 export const ThemeProvider = ({ children }) => {
-    // Mode (Light/Dark)
-    const [theme, setTheme] = useState(() => {
-        const saved = localStorage.getItem('theme');
-        return saved || 'light';
-    });
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+    const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'antigravity');
+    const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'indigo');
 
-    // Color Theme (Zinc, Blue, etc.)
-    const [colorTheme, setColorTheme] = useState(() => {
-        const saved = localStorage.getItem('colorTheme');
-        return saved || 'zinc';
-    });
-
-    // Apply Mode
     useEffect(() => {
         const root = window.document.documentElement;
         root.classList.add('theme-transitioning');
-        root.classList.remove('dark');
-        if (theme === 'dark') {
-            root.classList.add('dark');
-        }
+        root.classList.remove('dark', 'light');
+        root.classList.add(theme);
         localStorage.setItem('theme', theme);
         setTimeout(() => root.classList.remove('theme-transitioning'), 300);
     }, [theme]);
 
-    // Apply Color Theme
     useEffect(() => {
         const root = window.document.documentElement;
-        const colors = THEME_COLORS[colorTheme] || THEME_COLORS.zinc;
-        const activeColors = theme === 'dark' ? colors.dark : colors.light;
 
-        root.style.setProperty('--primary', activeColors.primary);
-        root.style.setProperty('--ring', activeColors.ring);
+        // 1. Surface Variables
+        const palette = SURFACE_PALETTES[surfacePalette] || SURFACE_PALETTES.antigravity;
+        const sSet = theme === 'dark' ? palette.dark : palette.light;
 
-        localStorage.setItem('colorTheme', colorTheme);
-    }, [theme, colorTheme]);
+        root.style.setProperty('--background', sSet.background);
+        root.style.setProperty('--secondary', sSet.secondary);
+        root.style.setProperty('--card', sSet.card);
+        root.style.setProperty('--border', sSet.border);
+        root.style.setProperty('--muted', sSet.secondary);
+        root.style.setProperty('--accent', sSet.secondary);
 
-    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
-    const setTargetTheme = (t) => setTheme(t);
+        // 2. Accent Variables
+        const accent = ACCENT_COLORS[accentColor] || ACCENT_COLORS.indigo;
+        const aSet = theme === 'dark' ? accent.dark : accent.light;
+
+        root.style.setProperty('--primary', aSet.primary);
+        root.style.setProperty('--ring', aSet.primary);
+        root.style.setProperty('--primary-foreground', aSet.foreground);
+
+        localStorage.setItem('surfacePalette', surfacePalette);
+        localStorage.setItem('accentColor', accentColor);
+    }, [theme, surfacePalette, accentColor]);
 
     return (
-        <ThemeContext.Provider value={{ theme, toggleTheme, setTargetTheme, colorTheme, setColorTheme, colors: THEME_COLORS }}>
+        <ThemeContext.Provider value={{
+            theme, toggleTheme: () => setTheme(v => v === 'light' ? 'dark' : 'light'), setTargetTheme: setTheme,
+            surfacePalette, setSurfacePalette, palettes: SURFACE_PALETTES,
+            accentColor, setAccentColor, accents: ACCENT_COLORS
+        }}>
             {children}
         </ThemeContext.Provider>
     );

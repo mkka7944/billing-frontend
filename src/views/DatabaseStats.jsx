@@ -1,250 +1,198 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import {
-    Database, Table, RefreshCw, CheckCircle2, AlertCircle,
-    Users, FileText, CreditCard, Ticket, Map as MapIcon, Layers,
+    Database, RefreshCw, CheckCircle2, AlertCircle,
+    Users, CreditCard, Ticket, Map as MapIcon, Layers,
     Activity, Building2, Home, PowerOff, Globe
 } from 'lucide-react'
-import { CurrencyText } from '../components/common/UIComponents'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function DatabaseStats() {
-    const [stats, setStats] = useState([])
-    const [summary, setSummary] = useState(null)
+    const [stats, setStats] = useState({
+        survey: { active: 0, domestic: 0, commercial: 0, archived: 0 },
+        system: { staff: 0, bills: 0, tickets: 0, visits: 0, layers: 0 },
+        cities: {}
+    })
     const [loading, setLoading] = useState(true)
     const [lastUpdated, setLastUpdated] = useState(null)
 
-    const basicTables = [
-        { name: 'survey_units', icon: <MapIcon size={20} />, label: 'Survey Records', color: 'indigo' },
-        { name: 'bills', icon: <CreditCard size={20} />, label: 'Billing Records', color: 'emerald' },
-        { name: 'staff', icon: <Users size={20} />, label: 'Staff Accounts', color: 'purple' },
-        { name: 'tickets', icon: <Ticket size={20} />, label: 'Complaints/Tickets', color: 'amber' },
-        { name: 'compliance_visits', icon: <CheckCircle2 size={20} />, label: 'Field Visits', color: 'blue' },
-        { name: 'location_layers', icon: <Layers size={20} />, label: 'Map Layers (KML)', color: 'rose' }
-    ]
-
-    useEffect(() => {
-        fetchAllData()
-    }, [])
-
-    async function fetchAllData() {
-        try {
-            setLoading(true)
-
-            // Fetch basic table counts
-            const tableResults = await Promise.all(basicTables.map(async (table) => {
-                const { count, error } = await supabase
-                    .from(table.name)
-                    .select('*', { count: 'exact', head: true })
-
-                return {
-                    ...table,
-                    count: error ? 'Error' : count,
-                    status: error ? 'error' : 'online'
-                }
-            }))
-            setStats(tableResults)
-
-            // Calculate Census Summary Directly
-            const [
-                { count: activeCount },
-                { count: archivedCount },
-                { count: domesticCount },
-                { count: commercialCount }
-            ] = await Promise.all([
-                supabase.from('survey_units').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
-                supabase.from('survey_units').select('*', { count: 'exact', head: true }).eq('status', 'ARCHIVED'),
-                supabase.from('survey_units').select('*', { count: 'exact', head: true }).eq('unit_type', 'Domestic').eq('status', 'ACTIVE'),
-                supabase.from('survey_units').select('*', { count: 'exact', head: true }).eq('unit_type', 'Commercial').eq('status', 'ACTIVE')
-            ])
-
-            // Fetch unique tehsils from hierarchy
-            const { data: hierarchyData } = await supabase.from('location_hierarchy').select('tehsil')
-            const uniqueTehsils = [...new Set((hierarchyData || []).map(d => d.tehsil).filter(Boolean))]
-
-            // Fetch City Distribution for Active Records
-            let cityDist = {}
-            await Promise.all(uniqueTehsils.map(async (tehsil) => {
-                const { count } = await supabase
-                    .from('survey_units')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('tehsil', tehsil)
-                    .eq('status', 'ACTIVE')
-
-                if (count > 0) {
-                    cityDist[tehsil] = count
-                }
-            }))
-
-            setSummary({
-                total_active: activeCount || 0,
-                total_archived: archivedCount || 0,
-                domestic: domesticCount || 0,
-                commercial: commercialCount || 0,
-                city_distribution: cityDist
-            })
-
-            setLastUpdated(new Date().toLocaleTimeString())
-        } catch (err) {
-            console.error('Stats fetch error:', err)
-        } finally {
-            setLoading(false)
-        }
+    const baseParams = {
+        p_district: null, p_tehsil: null, p_uc: null, p_surveyor: null,
+        p_search: null, p_master_status: 'ALL', p_unit_type: null,
+        p_sort_column: 'id_numeric', p_sort_direction: 'desc',
+        p_page_size: 1, p_page_index: 0
     }
 
+    const fetchSummedCount = useCallback(async (params) => {
+        try {
+            const [activeRes, newRes] = await Promise.all([
+                supabase.rpc('get_hydrated_survey_stats', { ...baseParams, ...params, p_master_status: 'ACTIVE_BILLER' }),
+                supabase.rpc('get_hydrated_survey_stats', { ...baseParams, ...params, p_master_status: 'NEW_SURVEY' })
+            ])
+            return (activeRes.data?.[0]?.total_result_count || 0) + (newRes.data?.[0]?.total_result_count || 0)
+        } catch (e) { return 0 }
+    }, [])
+
+    const fetchAllData = useCallback(async () => {
+        try {
+            setLoading(true)
+            const [
+                { data: hData }, staffC, billsC, ticketsC, visitsC, layersC, archivedRes
+            ] = await Promise.all([
+                supabase.from('location_hierarchy').select('tehsil'),
+                supabase.from('staff').select('*', { count: 'exact', head: true }),
+                supabase.from('bills').select('*', { count: 'exact', head: true }),
+                supabase.from('tickets').select('*', { count: 'exact', head: true }),
+                supabase.from('compliance_visits').select('*', { count: 'exact', head: true }),
+                supabase.from('location_layers').select('*', { count: 'exact', head: true }),
+                supabase.rpc('get_hydrated_survey_stats', { ...baseParams, p_master_status: 'ARCHIVED' })
+            ])
+
+            const [totalA, domesticA, commercialA] = await Promise.all([
+                fetchSummedCount({}),
+                fetchSummedCount({ p_unit_type: 'Domestic' }),
+                fetchSummedCount({ p_unit_type: 'Commercial' })
+            ])
+
+            const uniqueTehsils = [...new Set((hData || []).map(d => d.tehsil).filter(Boolean))].sort()
+            let cityDist = {}
+            await Promise.all(uniqueTehsils.map(async (tehsil) => {
+                const count = await fetchSummedCount({ p_tehsil: tehsil })
+                if (count > 0) cityDist[tehsil] = count
+            }))
+
+            setStats({
+                survey: { active: totalA, domestic: domesticA, commercial: commercialA, archived: archivedRes.data?.[0]?.total_result_count || 0 },
+                system: { staff: staffC.count || 0, bills: billsC.count || 0, tickets: ticketsC.count || 0, visits: visitsC.count || 0, layers: layersC.count || 0 },
+                cities: cityDist
+            })
+            setLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+        } catch (err) { console.error(err) } finally { setLoading(false) }
+    }, [fetchSummedCount])
+
+    useEffect(() => { fetchAllData() }, [fetchAllData])
+
     return (
-        <div className="h-full overflow-y-auto scrollbar-hide bg-background/50">
-            <div className="p-8 max-w-7xl mx-auto space-y-10 animate-fade-in pb-20">
-                {/* Standardized Header */}
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-                            System Intelligence
-                            <Badge variant="outline" className="text-[10px] py-0 h-5 border-emerald-500/20 text-emerald-500 bg-emerald-500/5">LIVE</Badge>
+        <div className="h-full overflow-y-auto no-scrollbar bg-background selection:bg-primary/10">
+            <div className="p-1.5 md:p-3 max-w-[1700px] mx-auto space-y-2.5 animate-fade-in pb-20">
+
+                {/* Header View: Streamlined with Integrated City Density */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 mb-1">
+                    <div className="flex flex-col shrink-0">
+                        <h1 className="text-xl font-black tracking-tighter uppercase leading-none text-foreground flex items-center gap-2">
+                            <div className="p-1 rounded bg-primary/10 text-primary"><Database size={16} /></div>
+                            Node<span className="text-primary">.</span>Explorer
                         </h1>
-                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <Database size={14} className="text-indigo-500" />
-                            Active cluster stats from production node
-                        </p>
+                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1">
+                            <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                            Live Telemetry Stream
+                        </span>
                     </div>
-                    <Button
-                        onClick={fetchAllData}
-                        variant="outline"
-                        disabled={loading}
-                        className="gap-2 h-10 border-border bg-card/50 hover:bg-muted font-bold transition-all text-xs uppercase tracking-widest"
-                    >
-                        <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                        {loading ? 'Refining...' : 'Refresh Intel'}
-                    </Button>
+
+                    {/* Regional Density moved to Header cluster to save space */}
+                    <div className="flex flex-wrap items-center gap-1 sm:justify-end flex-1">
+                        {loading ? (
+                            [...Array(3)].map((_, i) => <Skeleton key={i} className="h-6 w-20 rounded-md border border-border/40" />)
+                        ) : (
+                            Object.entries(stats.cities).map(([name, count]) => (
+                                <div key={name} className="flex items-center gap-1.5 px-2 py-1 rounded border border-border/60 bg-card/60 hover:border-primary/40 transition-all cursor-default group shadow-sm">
+                                    <span className="text-[9px] font-black uppercase text-muted-foreground group-hover:text-primary transition-colors">{name}</span>
+                                    <span className="text-[10px] font-black tabular-nums">{count.toLocaleString()}</span>
+                                </div>
+                            ))
+                        )}
+                        <div className="h-5 w-px bg-border/60 mx-1 hidden md:block" />
+                        <Button
+                            onClick={fetchAllData}
+                            variant="outline"
+                            disabled={loading}
+                            className="h-7 px-2.5 border-border font-black text-[9px] uppercase tracking-widest gap-1.5 bg-card hover:bg-muted shadow-sm transition-all active:scale-95"
+                        >
+                            <RefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+                            {loading ? 'SYNC' : 'REFRESH'}
+                        </Button>
+                    </div>
                 </div>
 
-                {/* KPI Overview Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* 
+                   Ultra-Streamlined Unified Matrix:
+                   No more vertical grouping gaps. Everything in one tight flow.
+                   Optimized for 12 columns.
+                */}
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-1.5 auto-rows-min">
+
                     {loading ? (
-                        [...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
-                    ) : summary && (
+                        [...Array(9)].map((_, i) => <Skeleton key={i} className="h-[68px] col-span-1 rounded-xl border border-border/40" />)
+                    ) : (
                         <>
-                            <SummaryCard
-                                label="Active Surveys"
-                                value={summary.total_active}
-                                icon={<Activity size={18} />}
-                                trend="+2.4%"
-                            />
-                            <SummaryCard
-                                label="Domestic Units"
-                                value={summary.domestic}
-                                icon={<Home size={18} />}
-                            />
-                            <SummaryCard
-                                label="Commercial Units"
-                                value={summary.commercial}
-                                icon={<Building2 size={18} />}
-                            />
-                            <SummaryCard
-                                label="Archived Context"
-                                value={summary.total_archived}
-                                icon={<PowerOff size={18} />}
-                            />
+                            {/* Survey Segment */}
+                            <MetricCard label="Total Surveys" value={stats.survey.active} icon={<Activity size={15} />} color="primary" />
+                            <MetricCard label="Domestic" value={stats.survey.domestic} icon={<Home size={15} />} color="blue" />
+                            <MetricCard label="Commercial" value={stats.survey.commercial} icon={<Building2 size={15} />} color="purple" />
+                            <MetricCard label="Archived" value={stats.survey.archived} icon={<PowerOff size={15} />} color="slate" badge="Static" />
+
+                            {/* Operational Segment */}
+                            <MetricCard label="Staffing" value={stats.system.staff} icon={<Users size={15} />} color="emerald" />
+                            <MetricCard label="Billing" value={stats.system.bills} icon={<CreditCard size={15} />} color="amber" />
+                            <MetricCard label="Ticketing" value={stats.system.tickets} icon={<Ticket size={15} />} color="rose" />
+                            <MetricCard label="Audits" value={stats.system.visits} icon={<CheckCircle2 size={15} />} color="cyan" />
+                            <MetricCard label="GIS Layers" value={stats.system.layers} icon={<Layers size={15} />} color="violet" />
+
+                            {/* Future Capacity Fillers (Visual placeholders for empty space) */}
+                            <div className="col-span-1 border border-dashed border-border/20 rounded-xl flex items-center justify-center h-[68px]">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">Reserved</span>
+                            </div>
                         </>
                     )}
                 </div>
 
-                {/* Main Content Sections */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Geographic Distribution */}
-                    <Card className="lg:col-span-1 border-border/50 bg-card/30 shadow-sm overflow-hidden flex flex-col">
-                        <CardHeader className="pb-4 border-b border-border/50 bg-muted/20">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                                <Globe size={16} className="text-indigo-400" /> City Distribution
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6 space-y-5 flex-1 overflow-y-auto max-h-[500px] scrollbar-hide">
-                            {loading ? (
-                                [...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
-                            ) : summary && Object.entries(summary.city_distribution || {}).map(([city, count]) => (
-                                <div key={city} className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{city}</span>
-                                        <span className="text-xs font-bold tabular-nums">{count.toLocaleString()}</span>
-                                    </div>
-                                    <Progress
-                                        value={(count / (summary.total_active || 1)) * 100}
-                                        className="h-1.5 bg-muted/50"
-                                    />
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    {/* Table Connectivity & Scale Matrix */}
-                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-min">
-                        {loading ? (
-                            [...Array(6)].map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)
-                        ) : stats.map((table) => (
-                            <Card key={table.name} className="border-border/50 bg-card/30 hover:bg-card/50 transition-colors shadow-sm relative overflow-hidden group">
-                                <CardContent className="p-6">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-2.5 rounded-lg bg-muted border border-border group-hover:bg-primary/5 group-hover:border-primary/20 transition-all">
-                                            {table.icon}
-                                        </div>
-                                        <Badge
-                                            variant={table.status === 'online' ? 'gray' : 'destructive'}
-                                            className="uppercase text-[8px] font-black tracking-[0.1em]"
-                                        >
-                                            {table.status}
-                                        </Badge>
-                                    </div>
-
-                                    <div className="mt-8 space-y-1">
-                                        <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{table.label}</h3>
-                                        <div className="text-3xl font-black tracking-tighter tabular-nums drop-shadow-sm">
-                                            {table.count.toLocaleString()}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Footer Insight Component */}
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] px-4 py-8 border-t border-border/50 bg-muted/5 rounded-b-3xl">
-                    <div className="flex items-center gap-3">
-                        <AlertCircle size={14} className="text-amber-500" />
-                        Production node synchronization: Verified
-                    </div>
-                    <div className="tabular-nums opacity-60">
-                        Last Intel: {lastUpdated || 'SYNCING...'}
-                    </div>
+                {/* Logistics Footer */}
+                <div className="flex items-center justify-between px-2 pt-4 border-t border-border/20 opacity-40 mt-auto">
+                    <span className="text-[8px] font-black uppercase tracking-widest">Secure Master Node Connection • v2.8.4</span>
+                    <span className="text-[9px] font-black tracking-widest uppercase tabular-nums">Pulse: {lastUpdated || '--:--'}</span>
                 </div>
             </div>
         </div>
     )
 }
 
-function SummaryCard({ label, value, icon, trend }) {
+function MetricCard({ label, value, icon, color, badge }) {
+    const colorMap = {
+        primary: "text-primary bg-primary/10 border-primary/20",
+        indigo: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
+        blue: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+        purple: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+        slate: "text-slate-500 bg-slate-500/10 border-slate-500/20",
+        emerald: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+        amber: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+        rose: "text-rose-500 bg-rose-500/10 border-rose-500/20",
+        cyan: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
+        violet: "text-violet-500 bg-violet-500/10 border-violet-500/20"
+    }
+
     return (
-        <Card className="border-border/50 bg-card/30 shadow-sm relative overflow-hidden group">
-            <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 rounded-lg bg-muted text-foreground/70 group-hover:text-indigo-500 transition-colors">
-                        {icon}
-                    </div>
-                    {trend && (
-                        <span className="text-[10px] font-black text-emerald-500 flex items-center gap-0.5 bg-emerald-500/10 px-1.5 py-0.5 rounded leading-none">
-                            {trend}
-                        </span>
-                    )}
+        <Card className="col-span-1 border-border/50 bg-card/60 hover:bg-card hover:border-primary/30 transition-all shadow-sm group relative overflow-hidden flex flex-col items-start p-2 min-h-[68px] min-w-0">
+            <div className="flex items-center gap-2 mb-1.5 w-full">
+                <div className={`p-1.5 rounded-lg ${colorMap[color] || 'bg-muted'} group-hover:scale-105 transition-transform shrink-0`}>
+                    {icon}
                 </div>
-                <div className="space-y-0.5">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
-                    <p className="text-2xl font-black tracking-tighter tabular-nums">{value?.toLocaleString() || '0'}</p>
-                </div>
-            </CardContent>
+                {badge && (
+                    <span className="text-[7px] font-black uppercase bg-zinc-500/10 text-zinc-500 px-1 rounded-[2px] border border-zinc-500/20 ml-auto opacity-60">
+                        {badge}
+                    </span>
+                )}
+            </div>
+            <div className="flex flex-col w-full min-w-0 text-left">
+                <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight leading-none truncate w-full group-hover:text-foreground transition-colors mb-0.5">
+                    {label}
+                </span>
+                <span className="text-sm md:text-base font-black tabular-nums tracking-tighter leading-none text-foreground truncate">
+                    {typeof value === 'number' ? value.toLocaleString() : value}
+                </span>
+            </div>
         </Card>
     )
 }

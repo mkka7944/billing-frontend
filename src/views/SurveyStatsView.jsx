@@ -84,7 +84,7 @@ export default function SurveyStatsView() {
 
                 return (
                     <div className="flex flex-col gap-1 min-w-[80px]">
-                        <span className="text-sm font-black text-indigo-500 tabular-nums leading-none">
+                        <span className="text-sm font-black text-primary tabular-nums leading-none">
                             {record.survey_id}
                         </span>
                         <div className="flex">
@@ -107,7 +107,7 @@ export default function SurveyStatsView() {
                             {record.consumer_name || 'Anonymous'}
                         </span>
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium opacity-70">
-                            <MapPin size={10} className="text-indigo-500/50" />
+                            <MapPin size={10} className="text-primary/50" />
                             {shortenAreaName(record.uc_name, record.city_district, record.tehsil)}
                         </span>
                     </div>
@@ -239,7 +239,7 @@ export default function SurveyStatsView() {
                     <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight uppercase truncate leading-none w-full">
                         {filters.uc || filters.tehsil || filters.district || 'Global Operations'}
                     </h1>
-                    <Badge variant="outline" className="text-[10px] py-0 h-5 border-indigo-500/20 text-indigo-500 bg-indigo-500/5 tabular-nums whitespace-nowrap">
+                    <Badge variant="outline" className="text-[10px] py-0 h-5 border-primary/20 text-primary bg-primary/5 tabular-nums whitespace-nowrap">
                         {totalCount.toLocaleString()} DATA POINTS
                     </Badge>
                 </div>
