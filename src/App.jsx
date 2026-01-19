@@ -54,8 +54,8 @@ function Layout() {
           <div
             className={`
               fixed top-0 right-0 z-[1001] h-full w-full md:w-[480px]
-              transform transition-transform duration-500 ease-out shadow-2xl
-              ${selectedSurveyId ? 'translate-x-0' : 'translate-x-full'}
+              transform transition-all duration-500 ease-out shadow-2xl
+              ${selectedSurveyId ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}
             `}
           >
             <ErrorBoundary key={selectedSurveyId}>

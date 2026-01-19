@@ -14,6 +14,7 @@ export default function RecordDetail({ surveyId, onClose }) {
     const [bills, setBills] = useState([])
     const [financials, setFinancials] = useState({ totalDue: 0, totalPaid: 0, outstanding: 0, recoveryRate: 0, lastPaidDate: null })
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const [activeImage, setActiveImage] = useState(0)
     const [isGalleryOpen, setIsGalleryOpen] = useState(false)
     const [zoom, setZoom] = useState(1)
@@ -53,55 +54,42 @@ export default function RecordDetail({ surveyId, onClose }) {
 
         try {
             setLoading(true)
+            setError(null)
 
-            // 1. Fetch Survey Unit Basic Info
-            const { data: surveyData, error: surveyError } = await supabase
-                .from('survey_units')
-                .select('*')
-                .eq('survey_id', surveyId)
-                .single()
+            // ⚡ PHASE 1 OPTIMIZATION: UNIFIED 360-DEGREE FETCH
+            console.log('[Phase 1] Fetching Detail for ID:', surveyId)
+            const { data: rawResult, error: rpcError } = await supabase.rpc('get_unit_history_360', {
+                p_survey_id: surveyId
+            })
+            console.log('[Phase 1] RPC result:', rawResult)
 
-            if (surveyError) throw surveyError
-            if (!surveyData) throw new Error('No record found for the provided ID')
+            if (rpcError) throw rpcError
 
-            setData(surveyData)
+            // Supabase RPC can return an object or a single-item array
+            const rpcData = Array.isArray(rawResult) ? rawResult[0] : rawResult
 
-            // 2. Fetch Billing History
-            const { data: billingData, error: billingError } = await supabase
-                .from('bills')
-                .select('*')
-                .eq('survey_id', surveyId)
-                .order('bill_month', { ascending: false })
+            if (!rpcData || !rpcData.unit) {
+                console.warn('[Phase 1] No unit data returned for ID:', surveyId)
+                throw new Error('No record found for the provided ID')
+            }
 
-            if (billingError) throw billingError
+            // Data Mapping from RPC JSONB result
+            setData(rpcData.unit)
+            setBills(rpcData.bills || [])
 
-            // Calculate Financial Summary
-            const history = billingData || []
-            setBills(history)
+            const stats = rpcData.stats || { total_due: 0, total_paid: 0, outstanding: 0, last_paid_date: null }
 
-            const summary = history.reduce((acc, bill) => {
-                acc.totalDue += (bill.amount_due || 0)
-                acc.totalPaid += (bill.amount_paid || 0)
-                if (bill.payment_status !== 'PAID') {
-                    acc.outstanding += (bill.amount_due || 0)
-                }
-                if (bill.payment_status === 'PAID') {
-                    if (!acc.lastPaidDate || new Date(bill.paid_date) > new Date(acc.lastPaidDate)) {
-                        acc.lastPaidDate = bill.paid_date
-                    }
-                }
-                return acc
-            }, { totalDue: 0, totalPaid: 0, outstanding: 0, lastPaidDate: null })
-
-            summary.recoveryRate = summary.totalDue > 0
-                ? (summary.totalPaid / summary.totalDue) * 100
-                : 0
-
-            setFinancials(summary)
+            setFinancials({
+                totalDue: Number(stats.total_due),
+                totalPaid: Number(stats.total_paid),
+                outstanding: Number(stats.outstanding),
+                lastPaidDate: stats.last_paid_date,
+                recoveryRate: stats.total_due > 0 ? (stats.total_paid / stats.total_due) * 100 : 0
+            })
 
         } catch (err) {
-            console.error('Error fetching detail:', err)
-            // We can optionally set an error state here to show in UI
+            console.error('[Phase 1] Error fetching detail:', err)
+            setError(err.message)
         } finally {
             setLoading(false)
         }
@@ -148,9 +136,26 @@ export default function RecordDetail({ surveyId, onClose }) {
             </div>
 
             {loading ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                    <div className="w-8 h-8 border-2 border-slate-200 dark:border-slate-800 border-t-indigo-500 rounded-full animate-spin"></div>
-                    <span className="text-xs text-slate-500 font-medium font-display tracking-widest uppercase">Calibrating Scale...</span>
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-400">
+                    <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Calibrating Scale...</span>
+                </div>
+            ) : error ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-4">
+                    <AlertCircle size={48} className="text-rose-500 opacity-20" />
+                    <div className="space-y-1">
+                        <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Hydration Failure</div>
+                        <div className="text-[10px] font-bold opacity-60 uppercase tracking-tighter">{error}</div>
+                    </div>
+                    <button
+                        onClick={fetchData}
+                        className="px-4 py-2 bg-indigo-500/10 text-indigo-500 text-[10px] font-black rounded-lg hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
+                    >
+                        Retry Connection
+                    </button>
+                    <div className="text-[10px] opacity-40 italic max-w-xs mx-auto">
+                        This usually happens if the database connection times out. Check the [Performance Fix] script.
+                    </div>
                 </div>
             ) : data ? (
                 <>

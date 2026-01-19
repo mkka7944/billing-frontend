@@ -86,126 +86,52 @@ export default function SurveyStatsView() {
             setLoading(true)
             setError(null)
 
-            // 1. SIMPLE COUNT (fast head-only query on the VIEW)
-            let countQuery = supabase.from('survey_units_with_stats')
-                .select('survey_id', { count: 'exact', head: true })
-
-            // Apply location filters
-            if (filters.district) countQuery = countQuery.eq('city_district', filters.district)
-            if (filters.tehsil) countQuery = countQuery.eq('tehsil', filters.tehsil)
-            if (filters.uc) countQuery = countQuery.eq('uc_name', filters.uc)
-            if (filters.surveyor) countQuery = countQuery.eq('surveyor_name', filters.surveyor)
-            if (filters.search) countQuery = countQuery.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
-
-            // Apply status filters using the view columns
-            if (filters.masterStatus === 'ARCHIVED') {
-                countQuery = countQuery.eq('status', 'ARCHIVED')
-            } else if (filters.masterStatus === 'ACTIVE_BILLER') {
-                countQuery = countQuery.eq('status', 'ACTIVE').eq('is_biller', true)
-            } else if (filters.masterStatus === 'NEW_SURVEY') {
-                countQuery = countQuery.eq('status', 'ACTIVE').eq('is_biller', false)
-            } else if (filters.masterStatus !== 'ALL') {
-                countQuery = countQuery.eq('status', 'ACTIVE')
-            }
-
-            const { count: currentCountResult } = await countQuery
-            const currentCount = currentCountResult || 0
-            setTotalCount(currentCount)
-
-            // 2. DATA QUERY - Step 1: Base Survey Fetch (Fast)
-            let query = supabase.from('survey_units_with_stats').select(`
-                survey_id, consumer_name, city_district, tehsil, uc_name, 
-                status, surveyor_name, survey_date, created_at, is_biller
-            `)
-
-            // Apply same location filters
-            if (filters.district) query = query.eq('city_district', filters.district)
-            if (filters.tehsil) query = query.eq('tehsil', filters.tehsil)
-            if (filters.uc) query = query.eq('uc_name', filters.uc)
-            if (filters.surveyor) query = query.eq('surveyor_name', filters.surveyor)
-            if (filters.search) query = query.or(`survey_id.ilike.%${filters.search}%,consumer_name.ilike.%${filters.search}%`)
-
-            // Apply status filters
-            if (filters.masterStatus === 'ARCHIVED') {
-                query = query.eq('status', 'ARCHIVED')
-            } else if (filters.masterStatus === 'ACTIVE_BILLER') {
-                query = query.eq('status', 'ACTIVE').eq('is_biller', true)
-            } else if (filters.masterStatus === 'NEW_SURVEY') {
-                query = query.eq('status', 'ACTIVE').eq('is_biller', false)
-            } else if (filters.masterStatus !== 'ALL') {
-                query = query.eq('status', 'ACTIVE')
-            }
-
-            // Pagination - Simple pagination since filtering is now server-side
-            const from = pageIndex * PAGE_SIZE
-            const to = from + PAGE_SIZE - 1
-
-            // Apply sort and range (leveraging the new functional index on id_numeric)
-            const { data, error } = await query
-                .range(from, to)
-                .order(sortConfig.key, { ascending: sortConfig.direction === 'asc' })
-
-            if (error) throw error
-
-            // 3. Step 2: Bill Hydration (Pluck bills for only these 50 records)
-            const surveyIds = (data || []).map(r => r.survey_id)
-            let billsData = []
-
-            if (surveyIds.length > 0) {
-                const { data: bData, error: bError } = await supabase.from('bills')
-                    .select('survey_id, amount_due, amount_paid, payment_status, is_issued, bill_month')
-                    .in('survey_id', surveyIds)
-
-                if (!bError) billsData = bData
-            }
-
-            // 4. Process records (Merge and Calculate)
-            const processed = (data || []).map(row => {
-                const bills = billsData.filter(b => b.survey_id === row.survey_id)
-                const isBiller = row.is_biller
-
-                // Skip detailed bill processing for NEW_SURVEY if not needed, 
-                // but usually we want to see available bills if any
-                if (filters.masterStatus === 'NEW_SURVEY' && bills.length === 0) {
-                    return { ...row, total_due: 0, total_paid: 0, is_biller: isBiller, history: [] }
-                }
-
-                // Full processing
-                const sortedBills = bills.sort((a, b) => (b.bill_month || '').localeCompare(a.bill_month || ''))
-                const totalDue = sortedBills.reduce((sum, b) => sum + (b.amount_due || 0), 0)
-                const totalPaid = sortedBills.reduce((sum, b) => sum + (b.amount_paid || 0), 0)
-
-                const months = ['DEC2025', 'NOV2025', 'OCT2025', 'SEP2025']
-                const history = months.map(m => {
-                    const b = sortedBills.find(bill => bill.bill_month === m)
-                    return { month: m, paid: b ? b.payment_status === 'PAID' : null, issued: b ? b.is_issued : null }
-                })
-
-                return { ...row, total_due: totalDue, total_paid: totalPaid, is_biller: isBiller, history }
+            // ⚡ PHASE 1 OPTIMIZATION: SINGLE-TRIP RPC FETCH
+            // This replaces the old "3-way fetch" (Count -> Survey -> Bills)
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_hydrated_survey_stats', {
+                p_district: filters.district || null,
+                p_tehsil: filters.tehsil || null,
+                p_uc: filters.uc || null,
+                p_surveyor: filters.surveyor || null,
+                p_search: filters.search || null,
+                p_master_status: filters.masterStatus,
+                p_sort_column: sortConfig.key,
+                p_sort_direction: sortConfig.direction,
+                p_page_size: PAGE_SIZE,
+                p_page_index: pageIndex
             })
 
+            if (rpcError) throw rpcError
+
+            // The RPC returns a single row with total_result_count and hydrated_records array
+            const { total_result_count, hydrated_records } = rpcData?.[0] || { total_result_count: 0, hydrated_records: [] }
+            
+            const currentCount = Number(total_result_count)
+            const processed = hydrated_records || []
+
+            setTotalCount(currentCount)
             setRecords(processed)
 
-            // 4. Stats calculation
+            // 5. Stats calculation (Dynamic based on current view set)
             const visibleDue = processed.reduce((s, r) => s + (r.total_due || 0), 0)
             const visiblePaid = processed.reduce((s, r) => s + (r.total_paid || 0), 0)
 
-            // If we are in 'ACTIVE_BILLER' mode, the totalCount IS the number of active surveys
+            // Recovery Rate Logic: Surveys that are billers (PSID attached)
             const totalActiveSurveys = filters.masterStatus === 'ACTIVE_BILLER' ? currentCount : processed.filter(r => r.is_biller).length
 
             setStats({
-                totalSurveys: currentCount || 0,
+                totalSurveys: currentCount,
                 activeSurveys: totalActiveSurveys,
-                archivedRecords: filters.masterStatus === 'ARCHIVED' ? (currentCount || 0) : 0,
+                archivedRecords: filters.masterStatus === 'ARCHIVED' ? currentCount : 0,
                 totalDue: visibleDue,
                 totalPaid: visiblePaid,
                 recoveryRate: visibleDue > 0 ? (visiblePaid / visibleDue) * 100 : 0
             })
 
+            setLoading(false)
         } catch (err) {
-            console.error('Fetch error:', err)
+            console.error('Fetch Error:', err)
             setError(err.message)
-        } finally {
             setLoading(false)
         }
     }

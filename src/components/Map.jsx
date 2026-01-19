@@ -203,6 +203,7 @@ export default function Map() {
                                             </div>
                                             <div className="mt-2 pt-2 border-t border-slate-200 dark:border-white/5 text-[10px] text-indigo-600 dark:text-indigo-300 flex items-center gap-1 font-extrabold uppercase tracking-tight cursor-pointer" onClick={(e) => {
                                                 e.stopPropagation();
+                                                console.log('[Map] Selecting record for detail view:', m.survey_id);
                                                 setSelectedSurveyId(m.survey_id);
                                             }}>
                                                 <MapIcon size={10} /> View Full Report
