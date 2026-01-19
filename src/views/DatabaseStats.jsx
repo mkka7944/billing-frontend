@@ -122,10 +122,10 @@ export default function DatabaseStats() {
                    No more vertical grouping gaps. Everything in one tight flow.
                    Optimized for 12 columns.
                 */}
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12 gap-1.5 auto-rows-min">
+                <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-8 gap-1.5 auto-rows-min">
 
                     {loading ? (
-                        [...Array(9)].map((_, i) => <Skeleton key={i} className="h-[68px] col-span-1 rounded-xl border border-border/40" />)
+                        [...Array(10)].map((_, i) => <Skeleton key={i} className="h-[68px] col-span-1 rounded-xl border border-border/40" />)
                     ) : (
                         <>
                             {/* Survey Segment */}
