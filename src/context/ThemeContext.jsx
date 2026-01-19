@@ -11,13 +11,23 @@ const SURFACE_PALETTES = {
         light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 100%' },
         dark: { background: '240 5% 10%', secondary: '240 5% 7%', card: '240 5% 14%', border: '240 5% 18%' }
     },
+    github: {
+        name: 'GitHub Dark', // High-fidelity GitHub aesthetic
+        light: { background: '0 0% 100%', secondary: '210 20% 98%', card: '0 0% 100%', border: '210 20% 90%' },
+        dark: { background: '222 13% 7%', secondary: '222 13% 10%', card: '222 13% 12%', border: '210 12% 20%' }
+    },
+    mocha: {
+        name: 'Mocha Slate', // Warm, earthy dark mode
+        light: { background: '30 15% 98%', secondary: '30 15% 95%', card: '0 0% 100%', border: '30 10% 90%' },
+        dark: { background: '20 5% 10%', secondary: '20 5% 13%', card: '20 5% 15%', border: '20 5% 20%' }
+    },
     cloud: {
-        name: 'Cloud Paper', // Ultra-clean light mode
+        name: 'Cloud Paper',
         light: { background: '0 0% 100%', secondary: '210 20% 98%', card: '0 0% 100%', border: '210 20% 90%' },
         dark: { background: '210 20% 4%', secondary: '210 20% 2%', card: '210 20% 6%', border: '210 10% 12%' }
     },
     ivory: {
-        name: 'Soft Ivory', // Warm-toned light mode
+        name: 'Soft Ivory',
         light: { background: '45 20% 99%', secondary: '45 15% 96%', card: '0 0% 100%', border: '45 10% 90%' },
         dark: { background: '45 10% 4%', secondary: '45 10% 2%', card: '45 10% 6%', border: '45 5% 12%' }
     },
@@ -52,6 +62,11 @@ const ACCENT_COLORS = {
         light: { primary: '199 89% 48%', foreground: '0 0% 100%' },
         dark: { primary: '199 89% 48%', foreground: '0 0% 100%' }
     },
+    github_blue: {
+        name: 'GitHub Blue',
+        light: { primary: '212 92% 45%', foreground: '0 0% 100%' },
+        dark: { primary: '212 92% 45%', foreground: '0 0% 100%' }
+    },
     emerald: {
         name: 'Bio-Green',
         light: { primary: '142 71% 45%', foreground: '0 0% 100%' },
@@ -68,17 +83,17 @@ const ACCENT_COLORS = {
         dark: { primary: '38 92% 50%', foreground: '38 92% 5%' }
     },
     steel: {
-        name: 'Steel Grey', // New Neutral Gray
+        name: 'Steel Grey',
         light: { primary: '210 10% 40%', foreground: '0 0% 100%' },
         dark: { primary: '210 10% 60%', foreground: '210 10% 10%' }
     },
     slate_grey: {
-        name: 'Cool Slate', // New Blue-ish Gray
+        name: 'Cool Slate',
         light: { primary: '215 15% 45%', foreground: '0 0% 100%' },
         dark: { primary: '215 20% 65%', foreground: '215 20% 10%' }
     },
     graphite: {
-        name: 'Lead Graphite', // New Dark Gray
+        name: 'Lead Graphite',
         light: { primary: '240 6% 25%', foreground: '0 0% 98%' },
         dark: { primary: '240 6% 45%', foreground: '240 6% 5%' }
     },
