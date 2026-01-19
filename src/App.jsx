@@ -8,6 +8,7 @@ import Map from './components/Map'
 import RecordDetail from './components/RecordDetail'
 import DatabaseStats from './views/DatabaseStats'
 import SurveyStatsView from './views/SurveyStatsView'
+import FinanceView from './views/FinanceView'
 import SettingsView from './views/SettingsView'
 import StyleLab from './views/StyleLab'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -47,7 +48,7 @@ function Layout() {
             } />
             <Route path="/surveys" element={<SurveyStatsView />} />
             <Route path="/query" element={<SurveyStatsView />} />
-            <Route path="/financials" element={<SurveyStatsView />} />
+            <Route path="/financials" element={<FinanceView />} />
             <Route path="/performance" element={<SurveyStatsView />} />
             <Route path="/tickets" element={<SurveyStatsView />} />
             <Route path="/stats" element={<DatabaseStats />} />
