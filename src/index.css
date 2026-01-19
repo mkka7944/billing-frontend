@@ -4,14 +4,69 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --primary: 99 102 241;
-  /* Indigo-500 */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 2.0%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5% 50%;
+    /* Middle Gray */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 90%;
+    /* Light Gray */
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --paid: 142.1 70.6% 45.3%;
+    --unpaid: 0 84.2% 60.2%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 240 5% 30%;
+    /* Dark Gray */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 3.7% 20%;
+    /* Even Darker Gray */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --paid: 142.1 70.6% 45.3%;
+    --unpaid: 0 84.2% 60.2%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 5% 30%;
+  }
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors duration-300 ease-in-out;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -23,7 +78,7 @@
   .theme-transitioning *,
   .theme-transitioning *::before,
   .theme-transitioning *::after {
-    transition-property: background-color, border-color, divide-color, color, fill, stroke, box-shadow !important;
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
     transition-duration: 300ms !important;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
@@ -148,6 +203,22 @@
   }
 }
 
+@layer utilities {
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
+
 /* Map specific tweaks */
 .leaflet-container {
   @apply bg-slate-100 dark:bg-slate-950 !important;
@@ -202,10 +273,12 @@
     transform: scale(0.8);
     opacity: 0.8;
   }
+
   50% {
     transform: scale(2.5);
     opacity: 0;
   }
+
   100% {
     transform: scale(0.8);
     opacity: 0;

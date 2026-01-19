@@ -32,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
                     >
                         <RefreshCw size={14} /> REINITIALIZE APP
                     </button>
-                    {process.env.NODE_ENV === 'development' && (
+                    {import.meta.env.DEV && (
                         <pre className="mt-4 p-4 text-[10px] text-left bg-black text-red-400 overflow-auto max-w-full rounded-lg">
                             {this.state.error?.toString()}
                         </pre>

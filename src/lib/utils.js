@@ -1,32 +1,45 @@
+import { clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
 /**
- * Logic Parity with modern-map.py
+ * Shadcn UI utility for merging tailwind classes
  */
+export function cn(...inputs) {
+    return twMerge(clsx(inputs))
+}
 
+/**
+ * Smart location name shortener ported from legacy engine
+ * @param {string} name - UC/Area name
+ * @param {string} district - District name
+ * @param {string} tehsil - Tehsil name
+ */
 export function shortenAreaName(name, district, tehsil) {
-    if (!name) return 'N/A';
+    if (!name) return "";
 
-    // Clean name from breadcrumbs if they were prepended
-    let cleanName = name
-        .replace(new RegExp(`${district} - `, 'gi'), '')
-        .replace(new RegExp(`${tehsil} - `, 'gi'), '');
+    let processed = name
+        .replace(`${district} - `, "")
+        .replace(`${tehsil} - `, "");
 
-    // Don't shorten for Khushab as per legacy logic
-    if (district && district.toUpperCase() === 'KHUSHAB') {
-        return cleanName.trim();
+    if (district?.toUpperCase() === 'KHUSHAB') {
+        return processed.trim();
     }
 
     // Match patterns like MC-1, UC-4
-    const match = cleanName.match(/((?:MC|UC|Zone|Ward)[-\s]*\d+)/i);
+    const match = processed.match(/((?:MC|UC|Zone|Ward)[-\s]*\d+)/i);
     if (match) {
         return match[1].toUpperCase().replace(/\s/g, '');
     }
 
-    // Fallback: first word or comma split
-    return cleanName.split(',')[0].trim().split(' ')[0];
+    // Fallback to first word or comma split
+    return processed.split(',')[0].trim().split(' ')[0];
 }
 
+/**
+ * Formats a standardized location label
+ */
 export function formatLocationLabel(district, area) {
-    if (!district) return area || 'Unknown';
-    if (!area) return district;
+    if (!area) return district || "Unknown Location";
+    if (area.includes(district)) return area;
     return `${district} - ${area}`;
 }

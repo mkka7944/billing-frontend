@@ -8,23 +8,27 @@ import Map from './components/Map'
 import RecordDetail from './components/RecordDetail'
 import DatabaseStats from './views/DatabaseStats'
 import SurveyStatsView from './views/SurveyStatsView'
+import SettingsView from './views/SettingsView'
+import StyleLab from './views/StyleLab'
 import ErrorBoundary from './components/ErrorBoundary'
 import { Menu } from 'lucide-react'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 
 
 function Layout() {
   const { theme } = useTheme()
-  const { selectedSurveyId, setSelectedSurveyId, isSidebarOpen, setIsSidebarOpen } = useUI()
+  const { selectedSurveyId, setSelectedSurveyId, isSidebarOpen, setIsSidebarOpen, isSidebarCollapsed } = useUI()
 
   return (
-    <div className="flex h-screen w-full overflow-hidden font-sans bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-50 transition-colors duration-300">
+    <div className="flex h-screen w-full overflow-hidden font-sans bg-background text-foreground transition-colors duration-300">
       {/* Main Navigation Sidebar */}
       <aside
         className={`
-          fixed md:relative z-50 h-full w-72 shrink-0
-          transform transition-transform duration-300 ease-in-out
+          fixed md:relative z-50 h-full shrink-0
+          transform transition-all duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          border-r border-slate-200 dark:border-white/5
+          ${isSidebarCollapsed ? 'w-[70px]' : 'w-72'}
+          border-r border-border
         `}
       >
         <Sidebar onCloseMobile={() => setIsSidebarOpen(false)} />
@@ -47,24 +51,23 @@ function Layout() {
             <Route path="/performance" element={<SurveyStatsView />} />
             <Route path="/tickets" element={<SurveyStatsView />} />
             <Route path="/stats" element={<DatabaseStats />} />
-            <Route path="/settings" element={<SurveyStatsView />} />
+            <Route path="/settings" element={<SettingsView />} />
+            <Route path="/style-lab" element={<StyleLab />} />
           </Routes>
 
           {/* Universal Record Detail (Always slide-over) */}
-          <div
-            className={`
-              fixed top-0 right-0 z-[1001] h-full w-full md:w-[480px]
-              transform transition-all duration-500 ease-out shadow-2xl
-              ${selectedSurveyId ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'}
-            `}
-          >
-            <ErrorBoundary key={selectedSurveyId}>
-              <RecordDetail
-                surveyId={selectedSurveyId}
-                onClose={() => setSelectedSurveyId(null)}
-              />
-            </ErrorBoundary>
-          </div>
+          <Sheet open={!!selectedSurveyId} onOpenChange={(open) => !open && setSelectedSurveyId(null)}>
+            <SheetContent side="right" className="w-[100vw] sm:max-w-[480px] p-0 border-l border-border bg-background [&>button]:hidden">
+              <div className="h-full w-full">
+                <ErrorBoundary key={selectedSurveyId}>
+                  <RecordDetail
+                    surveyId={selectedSurveyId}
+                    onClose={() => setSelectedSurveyId(null)}
+                  />
+                </ErrorBoundary>
+              </div>
+            </SheetContent>
+          </Sheet>
         </main>
 
         {/* Mobile Sidebar Overlay */}

@@ -6,6 +6,7 @@ export function UIProvider({ children }) {
     const [selectedSurveyId, setSelectedSurveyId] = useState(null)
     const [highlightedId, setHighlightedId] = useState(null)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
     // Helper to clear selection
     const clearSelection = () => {
@@ -31,7 +32,9 @@ export function UIProvider({ children }) {
             setHighlightedId,
             clearSelection,
             isSidebarOpen,
-            setIsSidebarOpen
+            setIsSidebarOpen,
+            isSidebarCollapsed,
+            setIsSidebarCollapsed
         }}>
             {children}
         </UIContext.Provider>

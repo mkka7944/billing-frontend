@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import {
     Search, Filter, MapPin, User, Calendar,
@@ -11,47 +10,151 @@ import {
 } from 'lucide-react'
 import { useUI } from '../context/UIContext'
 import { shortenAreaName, formatLocationLabel } from '../lib/utils'
-import { StatusBadge, CurrencyText } from '../components/common/UIComponents'
-import ModernDropdown from '../components/common/ModernDropdown'
+import { CurrencyText } from '../components/common/UIComponents'
 import { useLocationHierarchy } from '../lib/locationHooks'
+import { DataTable } from '../components/common/DataTable'
+import RecordDetail from '../components/RecordDetail'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 const PAGE_SIZE = 50
 
 export default function SurveyStatsView() {
-    const { setSelectedSurveyId } = useUI()
+    const { selectedSurveyId, setSelectedSurveyId } = useUI()
     const [records, setRecords] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [pageIndex, setPageIndex] = useState(0)
     const [totalCount, setTotalCount] = useState(0)
 
-    const [stats, setStats] = useState({
-        totalSurveys: 0,
-        activeSurveys: 0,
-        archivedRecords: 0,
-        totalDue: 0,
-        totalPaid: 0,
-        recoveryRate: 0
-    })
-
     const [filters, setFilters] = useState({
-        district: '',  // No default - show all
+        district: '',
         tehsil: '',
         uc: '',
         surveyor: '',
-        masterStatus: 'ALL',  // Default to ALL
+        unitType: 'ALL', // Domestic/Commercial
+        masterStatus: 'ALL',
         search: ''
     })
 
     const { districts, tehsils, ucs } = useLocationHierarchy(filters)
-
     const [surveyors, setSurveyors] = useState([])
-    const [sortConfig, setSortConfig] = useState({ key: 'id_numeric', direction: 'desc' })  // id_numeric for perfect numeric/chronological order
-
+    const [sortConfig, setSortConfig] = useState({ key: 'id_numeric', direction: 'desc' })
     const [isFilterOpen, setIsFilterOpen] = useState(true)
-    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
+    const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
 
-    // Load surveyors - Reactive to location filters
+    // Columns Definition
+    const columns = useMemo(() => [
+        {
+            accessorKey: "survey_id",
+            header: ({ column }) => (
+                <div
+                    className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => setSortConfig(prev => ({
+                        key: 'id_numeric',
+                        direction: prev.key === 'id_numeric' && prev.direction === 'desc' ? 'asc' : 'desc'
+                    }))}
+                >
+                    ID <ArrowUpDown size={12} className="opacity-50" />
+                </div>
+            ),
+            cell: ({ row }) => {
+                const record = row.original
+                // Extensive fallback check for building types (Domestic/Commercial)
+                // We check every possible field that might carry this info in bridge/raw/hydrated views
+                const rawType = record.unit_type || record.consumer_type || record.property_type || record.consumer_category || record.type || ''
+                const type = rawType.toLowerCase()
+
+                let badge = null
+                if (type.includes('residen') || type.includes('domest') || type.includes('home')) {
+                    badge = <Badge variant="outline" className="h-3.5 px-1 text-[8px] uppercase tracking-tighter font-black bg-blue-500/10 text-blue-600 border-blue-500/30 whitespace-nowrap">Domestic</Badge>
+                } else if (type.includes('commer') || type.includes('shop') || type.includes('office')) {
+                    badge = <Badge variant="outline" className="h-3.5 px-1 text-[8px] uppercase tracking-tighter font-black bg-purple-500/10 text-purple-600 border-purple-500/30 whitespace-nowrap">Commercial</Badge>
+                }
+
+                return (
+                    <div className="flex flex-col gap-1 min-w-[80px]">
+                        <span className="text-sm font-black text-indigo-500 tabular-nums leading-none">
+                            {record.survey_id}
+                        </span>
+                        <div className="flex">
+                            {badge && <div className="w-fit">{badge}</div>}
+                        </div>
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "consumer_name",
+            header: "Identity",
+            cell: ({ row }) => {
+                const record = row.original
+                return (
+                    <div
+                        className="flex flex-col group"
+                    >
+                        <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                            {record.consumer_name || 'Anonymous'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium opacity-70">
+                            <MapPin size={10} className="text-indigo-500/50" />
+                            {shortenAreaName(record.uc_name, record.city_district, record.tehsil)}
+                        </span>
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => {
+                const record = row.original
+                if (record.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 whitespace-nowrap">Archived</Badge>
+                if (record.is_biller) return <Badge variant="secondary" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-none hover:bg-emerald-500/15 whitespace-nowrap">Active</Badge>
+                return <Badge variant="outline" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 text-amber-600 border-amber-500/50 bg-amber-500/10 whitespace-nowrap">New Survey</Badge>
+            },
+        },
+        {
+            meta: { className: "hidden md:table-cell" },
+            header: "Finance",
+            cell: ({ row }) => (
+                <div className="flex flex-col items-center">
+                    <CurrencyText amount={row.original.total_paid} />
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-70">
+                        of <CurrencyText amount={row.original.total_due} />
+                    </span>
+                </div>
+            ),
+        },
+        {
+            meta: { className: "hidden md:table-cell" },
+            header: "Billing History",
+            cell: ({ row }) => (
+                <div className="flex items-end gap-2 justify-center h-full pb-1">
+                    {row.original.history.map((h, hi) => (
+                        <div key={hi} className="flex flex-col items-center gap-1.5 min-w-[18px]">
+                            <div className={`w-2 h-2 rounded-full transition-all ring-2 ring-offset-2 ring-transparent ${h.paid === null ? 'bg-muted ring-muted/20' : h.paid ? 'bg-emerald-500 shadow-emerald-500/20 shadow-sm' : 'bg-rose-500 shadow-rose-500/20 shadow-sm'}`} title={h.month} />
+                            <span className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-tight leading-none">
+                                {h.month.substring(0, 3)}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            ),
+        },
+    ], [setSelectedSurveyId, sortConfig])
+
+    // Fetch surveyors
     useEffect(() => {
         const fetchSurveyors = async () => {
             const { data, error } = await supabase.rpc('get_distinct_surveyors', {
@@ -59,23 +162,41 @@ export default function SurveyStatsView() {
                 p_tehsil: filters.tehsil || null,
                 p_uc: filters.uc || null
             })
-
-            if (!error && data) {
-                const names = data.map(item => item.surveyor_name)
-                setSurveyors(names)
-            } else if (error) {
-                console.error('Error fetching surveyors:', error)
-            }
+            if (!error && data) setSurveyors(data.map(item => item.surveyor_name))
         }
         fetchSurveyors()
     }, [filters.district, filters.tehsil, filters.uc])
 
-    // Reset page on filter change
+    // --- Centralized Keyboard Navigation for Records ---
     useEffect(() => {
-        setPageIndex(0)
-    }, [filters])
+        const handleKeyDown = (e) => {
+            // Only navigate if a record is selected and we aren't typing
+            if (!selectedSurveyId) return;
+            if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
 
-    // Single fetch trigger
+            const currentIdx = records.findIndex(r => r && String(r.survey_id).trim() === String(selectedSurveyId).trim());
+            if (currentIdx === -1) return;
+
+            if (e.key === 'ArrowRight') {
+                const nextId = currentIdx < records.length - 1 ? records[currentIdx + 1].survey_id : null;
+                if (nextId !== null && nextId !== undefined) {
+                    setSelectedSurveyId(nextId);
+                    e.preventDefault();
+                }
+            }
+            if (e.key === 'ArrowLeft') {
+                const prevId = currentIdx > 0 ? records[currentIdx - 1].survey_id : null;
+                if (prevId !== null && prevId !== undefined) {
+                    setSelectedSurveyId(prevId);
+                    e.preventDefault();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedSurveyId, records]);
+
     useEffect(() => {
         const timeout = setTimeout(fetchData, 500)
         return () => clearTimeout(timeout)
@@ -85,9 +206,6 @@ export default function SurveyStatsView() {
         try {
             setLoading(true)
             setError(null)
-
-            // ⚡ PHASE 1 OPTIMIZATION: SINGLE-TRIP RPC FETCH
-            // This replaces the old "3-way fetch" (Count -> Survey -> Bills)
             const { data: rpcData, error: rpcError } = await supabase.rpc('get_hydrated_survey_stats', {
                 p_district: filters.district || null,
                 p_tehsil: filters.tehsil || null,
@@ -95,6 +213,7 @@ export default function SurveyStatsView() {
                 p_surveyor: filters.surveyor || null,
                 p_search: filters.search || null,
                 p_master_status: filters.masterStatus,
+                p_unit_type: filters.unitType === 'ALL' ? null : filters.unitType,
                 p_sort_column: sortConfig.key,
                 p_sort_direction: sortConfig.direction,
                 p_page_size: PAGE_SIZE,
@@ -102,390 +221,343 @@ export default function SurveyStatsView() {
             })
 
             if (rpcError) throw rpcError
-
-            // The RPC returns a single row with total_result_count and hydrated_records array
             const { total_result_count, hydrated_records } = rpcData?.[0] || { total_result_count: 0, hydrated_records: [] }
-            
-            const currentCount = Number(total_result_count)
-            const processed = hydrated_records || []
-
-            setTotalCount(currentCount)
-            setRecords(processed)
-
-            // 5. Stats calculation (Dynamic based on current view set)
-            const visibleDue = processed.reduce((s, r) => s + (r.total_due || 0), 0)
-            const visiblePaid = processed.reduce((s, r) => s + (r.total_paid || 0), 0)
-
-            // Recovery Rate Logic: Surveys that are billers (PSID attached)
-            const totalActiveSurveys = filters.masterStatus === 'ACTIVE_BILLER' ? currentCount : processed.filter(r => r.is_biller).length
-
-            setStats({
-                totalSurveys: currentCount,
-                activeSurveys: totalActiveSurveys,
-                archivedRecords: filters.masterStatus === 'ARCHIVED' ? currentCount : 0,
-                totalDue: visibleDue,
-                totalPaid: visiblePaid,
-                recoveryRate: visibleDue > 0 ? (visiblePaid / visibleDue) * 100 : 0
-            })
-
-            setLoading(false)
+            setTotalCount(Number(total_result_count))
+            setRecords(hydrated_records || [])
         } catch (err) {
-            console.error('Fetch Error:', err)
             setError(err.message)
+        } finally {
             setLoading(false)
         }
     }
 
-    const toggleSort = (key) => {
-        setSortConfig(prev => ({
-            key,
-            direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
-        }))
-    }
-
-
     return (
-        <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
-            {/* Header Section */}
-            <div className="p-1.5 md:p-2 md:px-4 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/40 gap-1.5 md:gap-4 shrink-0">
-                <div className="flex items-center gap-1.5 md:gap-2.5 min-w-0 flex-1">
-                    <div className="p-1 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0 hidden lg:block">
-                        <BarChart3 size={16} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <h1 className="text-xs sm:text-sm md:text-lg font-bold text-slate-900 dark:text-slate-100 font-display uppercase tracking-tight truncate leading-tight">
-                            {filters.uc || filters.tehsil || filters.district || 'Global Dataset'}
-                        </h1>
-                        <div className="mt-0.5 flex items-center">
-                            <span className="px-1.5 py-0 rounded bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-[8px] md:text-[11px] font-black text-indigo-600 dark:text-indigo-400 shadow-sm shadow-indigo-500/10 tracking-tight whitespace-nowrap">
-                                {totalCount.toLocaleString()} RECORDS
-                            </span>
-                        </div>
-                    </div>
+        <div className="flex-1 flex flex-col min-h-0 bg-background transition-colors duration-300 overflow-hidden">
+            {/* Standardized Header */}
+            <div className="px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card/30 backdrop-blur-md shrink-0">
+                <div className="min-w-0 flex-1 flex flex-col items-start gap-1">
+                    <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight uppercase truncate leading-none w-full">
+                        {filters.uc || filters.tehsil || filters.district || 'Global Operations'}
+                    </h1>
+                    <Badge variant="outline" className="text-[10px] py-0 h-5 border-indigo-500/20 text-indigo-500 bg-indigo-500/5 tabular-nums whitespace-nowrap">
+                        {totalCount.toLocaleString()} DATA POINTS
+                    </Badge>
                 </div>
-                <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
-                    {/* Unified Control Toolbar */}
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 rounded-lg overflow-hidden h-8 md:h-10 border border-slate-200 dark:border-white/5 shadow-sm">
-                        {[
-                            { id: 'ALL', label: 'ALL' },
-                            { id: 'ACTIVE_BILLER', label: 'ACTIVE' },
-                            { id: 'NEW_SURVEY', label: 'NEW' },
-                            { id: 'ARCHIVED', label: 'ARCHIVED' }
-                        ].map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => setFilters(prev => ({ ...prev, masterStatus: s.id }))}
-                                className={`px-2 md:px-4 h-full text-[7px] md:text-[10px] font-black tracking-widest transition-all ${filters.masterStatus === s.id ? 'bg-white dark:bg-slate-700 text-indigo-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+
+                <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+                    <div className="hidden md:flex items-center bg-muted/50 p-1 rounded-xl border border-border/50">
+                        {['ALL', 'ACTIVE_BILLER', 'NEW_SURVEY', 'ARCHIVED'].map(s => (
+                            <Button
+                                key={s}
+                                variant={filters.masterStatus === s ? 'secondary' : 'ghost'}
+                                size="sm"
+                                onClick={() => setFilters(prev => ({ ...prev, masterStatus: s }))}
+                                className={`h-8 px-3 text-[10px] font-black tracking-widest uppercase transition-all ${filters.masterStatus === s ? 'bg-card' : 'text-muted-foreground hover:text-foreground'}`}
                             >
-                                {s.label}
-                            </button>
+                                {s.split('_')[0]}
+                            </Button>
                         ))}
-
-                        <div className="w-px h-4 bg-slate-200 dark:bg-white/10"></div>
-
-                        <button
-                            onClick={() => {
-                                if (window.innerWidth < 768) {
-                                    setIsMobileFilterOpen(true)
-                                } else {
-                                    setIsFilterOpen(!isFilterOpen)
-                                }
-                            }}
-                            className={`flex items-center justify-center h-full px-3 md:px-4 text-[8px] md:text-[10px] font-black transition-all ${isFilterOpen || isMobileFilterOpen ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10' : 'text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400'}`}
-                            title="Toggle Filters"
-                        >
-                            <Filter size={14} /> <span className="hidden lg:inline ml-1.5">FILTERS</span>
-                        </button>
-
-                        <button className="flex items-center justify-center h-full px-3 md:px-4 text-[8px] md:text-[10px] font-black text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-all">
-                            <FileSpreadsheet size={14} /> <span className="hidden lg:inline ml-1.5">EXPORT</span>
-                        </button>
                     </div>
+
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                            if (window.innerWidth < 768) {
+                                setMobileFiltersOpen(true)
+                            } else {
+                                setIsFilterOpen(!isFilterOpen)
+                            }
+                        }}
+                        className={`h-10 w-10 rounded-xl transition-all ${isFilterOpen ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 hover:bg-primary/90' : 'bg-card/50'}`}
+                    >
+                        <Filter size={18} />
+                    </Button>
                 </div>
             </div>
 
-            {/* Table Container */}
-            {/* Unifed Table Container including Filters */}
-            <div className="flex-1 flex flex-col overflow-hidden relative gap-0">
-                <div className="glass-panel overflow-hidden border-t border-slate-200 dark:border-white/5 flex-1 flex flex-col bg-white dark:bg-slate-900/50 min-h-0">
+            {/* View Shell */}
+            <div className="flex-1 flex flex-col p-4 gap-4 min-h-0 overflow-hidden">
+                {/* Ultra-Responsive Filter Matrix (Desktop/Tablet) */}
+                {isFilterOpen && (
+                    <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 2xl:flex 2xl:flex-nowrap 2xl:items-center gap-2 p-2 bg-muted/30 border border-border/40 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                        <div className="relative group w-full xl:w-48 shrink-0">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={14} />
+                            <Input
+                                placeholder="SEARCH..."
+                                className="h-9 pl-8 bg-card/50 border-border/50 font-bold uppercase tracking-widest text-[10px]"
+                                value={filters.search}
+                                onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
+                            />
+                        </div>
 
-                    {/* Integrated Filter Bar (Desktop) */}
-                    <div className="hidden md:block px-4 py-2 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50">
-                        {isFilterOpen ? (
-                            <div className="flex flex-col md:flex-row gap-3 items-center">
-                                <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-5 gap-3">
-                                    <div className="md:col-span-1 relative group h-[42px]">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors z-10" size={16} />
-                                        <input
-                                            type="text"
-                                            placeholder="SEARCH..."
-                                            className="w-full h-full pl-11 pr-4 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-sm font-semibold text-slate-800 dark:text-slate-200 transition-all outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
-                                            value={filters.search}
-                                            onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-                                        />
-                                    </div>
+                        <div className="flex items-center gap-2 w-full xl:w-fit">
+                            <Select value={filters.district || "ALL_DISTRICTS"} onValueChange={(val) => setFilters(f => ({ ...f, district: val === "ALL_DISTRICTS" ? "" : val, tehsil: '', uc: '' }))}>
+                                <SelectTrigger className="h-9 w-full xl:w-[120px] bg-card/50 text-[10px] font-bold uppercase tracking-wide">
+                                    <SelectValue placeholder="DISTRICT" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL_DISTRICTS">ALL DISTRICTS</SelectItem>
+                                    {districts.map((d) => (
+                                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                                    <ModernDropdown
-                                        options={[{ label: 'ALL DISTRICTS', value: '' }, ...districts]}
-                                        value={filters.district}
-                                        onChange={(val) => setFilters(f => ({ ...f, district: val, tehsil: '', uc: '' }))}
-                                        placeholder="DISTRICT"
-                                    />
+                            <Select value={filters.tehsil || "ALL_TEHSILS"} onValueChange={(val) => setFilters(f => ({ ...f, tehsil: val === "ALL_TEHSILS" ? "" : val, uc: '' }))}>
+                                <SelectTrigger className="h-9 w-full xl:w-[120px] bg-card/50 text-[10px] font-bold uppercase tracking-wide">
+                                    <SelectValue placeholder="TEHSIL" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL_TEHSILS">ALL TEHSILS</SelectItem>
+                                    {tehsils.map((t) => (
+                                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                                    <ModernDropdown
-                                        options={[{ label: 'ALL TEHSILS', value: '' }, ...tehsils]}
-                                        value={filters.tehsil}
-                                        onChange={(val) => setFilters(f => ({ ...f, tehsil: val, uc: '' }))}
-                                        placeholder="TEHSIL"
-                                    />
+                        <div className="flex items-center gap-2 w-full xl:w-fit">
+                            <Select value={filters.uc || "ALL_UCS"} onValueChange={(val) => setFilters(f => ({ ...f, uc: val === "ALL_UCS" ? "" : val }))}>
+                                <SelectTrigger className="h-9 w-full xl:w-[120px] bg-card/50 text-[10px] font-bold uppercase tracking-wide text-left">
+                                    <SelectValue placeholder="UC" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL_UCS">ALL UCS</SelectItem>
+                                    {ucs.map((u) => (
+                                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                                    <ModernDropdown
-                                        options={[{ label: 'ALL UCS', value: '' }, ...ucs]}
-                                        value={filters.uc}
-                                        onChange={(val) => setFilters(f => ({ ...f, uc: val }))}
-                                        placeholder="UC / AREA"
-                                    />
+                            <Select value={filters.surveyor || "ALL_SURVEYORS"} onValueChange={(val) => setFilters(f => ({ ...f, surveyor: val === "ALL_SURVEYORS" ? "" : val }))}>
+                                <SelectTrigger className="h-9 w-full xl:w-[120px] bg-card/50 text-[10px] font-bold uppercase tracking-wide">
+                                    <SelectValue placeholder="SURVEYOR" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL_SURVEYORS">ALL SURVEYORS</SelectItem>
+                                    {surveyors.map((s) => (
+                                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                                    <ModernDropdown
-                                        options={[{ label: 'ALL SURVEYORS', value: '' }, ...surveyors]}
-                                        value={filters.surveyor}
-                                        onChange={(val) => setFilters(f => ({ ...f, surveyor: val }))}
-                                        placeholder="SURVEYOR"
-                                    />
-                                </div>
+                        <div className="flex items-center gap-2 w-full xl:w-fit">
+                            <Select value={filters.unitType || "ALL"} onValueChange={(val) => setFilters(f => ({ ...f, unitType: val }))}>
+                                <SelectTrigger className="h-9 w-full xl:w-[120px] bg-card/50 text-[10px] font-bold uppercase tracking-wide">
+                                    <SelectValue placeholder="TYPE" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">ALL TYPES</SelectItem>
+                                    <SelectItem value="Domestic">DOMESTIC</SelectItem>
+                                    <SelectItem value="Commercial">COMMERCIAL</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                                <button
-                                    onClick={() => { setFilters({ district: 'SARGODHA', tehsil: '', uc: '', surveyor: '', search: '', billerStatus: 'ALL' }); setPageIndex(0); }}
-                                    className="h-[42px] px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 font-bold text-[10px] tracking-[0.1em] rounded-lg transition-all active:scale-95 border border-slate-200 dark:border-white/5 shrink-0"
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 ml-auto xl:ml-0"
+                                onClick={() => setFilters({ district: 'SARGODHA', tehsil: '', uc: '', surveyor: '', unitType: 'ALL', search: '', masterStatus: 'ALL' })}
+                            >
+                                <span className="text-[10px] font-black uppercase tracking-widest">Reset</span>
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Error Logic Gating */}
+                {error && (
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-left-2 shadow-sm">
+                        <AlertCircle size={20} />
+                        <div>
+                            <span className="text-xs font-black uppercase tracking-widest block">Operational Failure</span>
+                            <span className="text-[10px] font-bold opacity-80">{error}</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Data Matrix */}
+                <div className="flex-1 min-h-0 overflow-auto no-scrollbar flex flex-col rounded-xl border border-border/50 bg-card/30">
+                    <DataTable
+                        columns={columns}
+                        data={records}
+                        loading={loading}
+                        onRowClick={(row) => setSelectedSurveyId(row.survey_id)}
+                    />
+                </div>
+
+                {/* Standardized Operational Footer */}
+                <div className="pt-4 flex items-center justify-between border-t border-border shrink-0">
+                    <div className="flex items-center gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-60">
+                        <span className="bg-muted px-2 py-1 rounded-md text-foreground/80">Page {pageIndex + 1} of {Math.ceil(totalCount / PAGE_SIZE)}</span>
+                        <span>Showing {records.length} of {totalCount.toLocaleString()} Entries</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={pageIndex === 0}
+                            onClick={() => setPageIndex(0)}
+                            className="hidden md:flex h-9 w-9 bg-card/50 hover:bg-muted disabled:opacity-30 rounded-xl"
+                        >
+                            <ChevronsLeft size={16} />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={pageIndex === 0}
+                            onClick={() => setPageIndex(p => p - 1)}
+                            className="h-9 w-9 bg-card/50 hover:bg-muted disabled:opacity-30 rounded-xl"
+                        >
+                            <ChevronLeft size={16} />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={(pageIndex + 1) * PAGE_SIZE >= totalCount}
+                            onClick={() => setPageIndex(p => p + 1)}
+                            className="h-9 w-9 bg-card/50 hover:bg-muted disabled:opacity-30 rounded-xl"
+                        >
+                            <ChevronRight size={16} />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={(pageIndex + 1) * PAGE_SIZE >= totalCount}
+                            onClick={() => setPageIndex(Math.max(0, Math.ceil(totalCount / PAGE_SIZE) - 1))}
+                            className="hidden md:flex h-9 w-9 bg-card/50 hover:bg-muted disabled:opacity-30 rounded-xl"
+                        >
+                            <ChevronsRight size={16} />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            {/* Mobile Filter Sheet */}
+            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetContent side="bottom" className="rounded-t-3xl pt-6 bg-background/95 backdrop-blur-xl border-t border-border/50">
+                    <SheetHeader className="mb-6">
+                        <SheetTitle className="uppercase font-black tracking-widest text-lg">Filters</SheetTitle>
+                    </SheetHeader>
+                    <div className="space-y-6 pb-8">
+                        <div className="flex items-center bg-muted/50 p-1.5 rounded-xl border border-border/50 w-full">
+                            {['ALL', 'ACTIVE_BILLER', 'NEW_SURVEY', 'ARCHIVED'].map(s => (
+                                <Button
+                                    key={s}
+                                    variant={filters.masterStatus === s ? 'secondary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setFilters(prev => ({ ...prev, masterStatus: s }))}
+                                    className={`flex-1 h-8 px-0 text-[9px] font-black tracking-widest uppercase transition-all ${filters.masterStatus === s ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
-                                    RESET
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Filters Hidden</span>
-                                <button className="text-xs font-bold text-indigo-500" onClick={() => setIsFilterOpen(true)}>SHOW FILTERS</button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Error Message */}
-                    {error && (
-                        <div className="mx-6 mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-500">
-                            <AlertCircle size={20} />
-                            <div>
-                                <span className="text-xs font-bold uppercase tracking-widest block">Query Logic Failure</span>
-                                <span className="text-[10px] opacity-80">{error}</span>
-                            </div>
+                                    {s.split('_')[0]}
+                                </Button>
+                            ))}
                         </div>
-                    )}
-
-
-                    {/* Table Header */}
-                    <div className="grid grid-cols-12 gap-0 py-2 px-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-white/5 sticky top-0 z-10 shadow-sm">
-                        <div
-                            className={`col-span-2 md:col-span-2 lg:col-span-1 text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all flex items-center gap-2 pl-4 group/sort ${sortConfig.key === 'id_numeric' ? 'text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}
-                            onClick={() => toggleSort('id_numeric')}
-                        >
-                            ID <ArrowUpDown size={12} className={`transition-transform duration-300 ${sortConfig.key === 'id_numeric' && sortConfig.direction === 'asc' ? 'rotate-180 text-indigo-500' : 'opacity-40 group-hover/sort:opacity-100'}`} />
-                        </div>
-                        <div className="col-span-7 md:col-span-4 lg:col-span-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Identity</div>
-                        <div className="col-span-3 md:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</div>
-                        <div className="hidden md:block md:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Finance</div>
-                        <div className="hidden lg:block lg:col-span-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Billing</div>
-                        <div className="hidden md:block md:col-span-2 lg:col-span-1 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-4">Actions</div>
-                    </div>
-
-                    {/* Table Body */}
-                    <div className="flex-1 overflow-y-auto scrollbar-premium">
-                        <div className="divide-y divide-slate-200/60 dark:divide-white/[0.02]">
-                            {loading ? (
-                                <div className="p-20 text-center flex flex-col items-center gap-4">
-                                    <RefreshCw className="text-indigo-500 animate-spin" size={40} />
-                                    <span className="text-sm font-bold text-slate-400 uppercase tracking-wider">Syncing with Supabase...</span>
-                                </div>
-                            ) : records.length > 0 ? (
-                                records.map(record => (
-                                    <div key={record.survey_id} className="grid grid-cols-12 gap-0 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors items-center border-b border-slate-200/60 dark:border-white/[0.02] last:border-0">
-                                        <div className="col-span-2 md:col-span-2 lg:col-span-1 pl-4 py-1.5 pr-2 overflow-hidden">
-                                            <span className="text-xs md:text-sm lg:text-base font-black text-indigo-500 tabular-nums drop-shadow-sm flex justify-center md:justify-start truncate">
-                                                {record.survey_id}
-                                            </span>
-                                        </div>
-                                        <div className="col-span-7 md:col-span-4 lg:col-span-4 pl-2 py-1.5" onClick={() => setSelectedSurveyId(record.survey_id)}>
-                                            <div className="flex flex-col cursor-pointer">
-                                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate max-w-[150px] md:max-w-none">{record.consumer_name || 'Anonymous'}</span>
-                                                <span className="hidden sm:flex text-[10px] text-slate-500 items-center gap-1 mt-1 font-medium italic opacity-80">
-                                                    <MapPin size={10} className="text-indigo-500/50" />
-                                                    {shortenAreaName(record.uc_name, record.city_district, record.tehsil)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="col-span-3 md:col-span-2 px-2 py-1.5 flex flex-col items-center justify-center gap-1 border-x border-slate-200/60 dark:border-white/5">
-                                            {record.status === 'ARCHIVED' ? (
-                                                <div className="px-2 py-0.5 rounded text-[8px] font-black bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">ARCHIVED</div>
-                                            ) : record.is_biller ? (
-                                                <div className="px-2 py-0.5 rounded text-[8px] font-black bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]">ACTIVE</div>
-                                            ) : (
-                                                <div className="px-2 py-0.5 rounded text-[8px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-white/10 shadow-[0_0_8px_rgba(100,116,139,0.1)]">NEW SURVEY</div>
-                                            )}
-                                        </div>
-                                        <div className="hidden md:flex md:col-span-2 px-4 py-1.5 flex flex-col items-center">
-                                            <div className="text-sm font-bold text-slate-800 dark:text-slate-200 tabular-nums">
-                                                <CurrencyText amount={record.total_paid} />
-                                            </div>
-                                            <div className="text-[9px] font-medium text-slate-400 mt-0.5">
-                                                of <CurrencyText amount={record.total_due} />
-                                            </div>
-                                        </div>
-                                        <div className="hidden lg:flex lg:col-span-2 px-2 py-1.5 items-center justify-center gap-2">
-                                            {record.history.map((h, hi) => (
-                                                <div key={hi} className="flex flex-col items-center gap-1.5 p-1.5 rounded-xl border border-transparent hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                                                    <div className="flex flex-col gap-1 items-center">
-                                                        <div className={`w-2.5 h-1.5 rounded-full ${h.paid === null ? 'bg-slate-200 dark:bg-slate-800' : h.paid ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-red-400'}`} />
-                                                        <div className={`${h.issued === null ? 'text-slate-200 dark:text-slate-800' : h.issued ? 'text-indigo-500' : 'text-slate-300'}`}>
-                                                            <Printer size={10} strokeWidth={h.issued ? 3 : 2} />
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-[8px] font-black text-slate-400 uppercase">{h.month.substring(0, 3)}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="hidden md:flex md:col-span-2 lg:col-span-1 px-4 py-1.5 justify-end">
-                                            <button
-                                                onClick={() => setSelectedSurveyId(record.survey_id)}
-                                                className="p-2 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
-                                            >
-                                                <Eye size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="p-20 text-center opacity-50">
-                                    <Search className="mx-auto text-slate-300 mb-4" size={48} />
-                                    <div className="text-sm font-bold text-slate-400">NO RECORDS IN THIS SECTOR</div>
-                                    <div className="text-xs text-slate-500 mt-1">Try resetting filters to show all districts</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    {/* Pagination & Status Footer */}
-                    <div className="py-1.5 px-4 md:px-4 pb-1 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-white/5 flex items-center justify-between z-30 shrink-0">
-                        <div className="hidden md:flex text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest items-center gap-4">
-                            <span className="bg-slate-100 dark:bg-white/5 px-2 py-1 rounded">PAGE {pageIndex + 1} OF {Math.ceil(totalCount / PAGE_SIZE)}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                            <span>SHOWING {records.length} OF {totalCount.toLocaleString()} TOTAL RECORDS</span>
-                        </div>
-                        <div className="flex md:hidden flex-col">
-                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">PAGE {pageIndex + 1} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}</span>
-                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.1em]">{totalCount.toLocaleString()} TOTAL</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                disabled={pageIndex === 0}
-                                onClick={() => setPageIndex(0)}
-                                className="p-2 md:p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/10 disabled:opacity-20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all active:scale-95"
-                                title="First Page"
-                            >
-                                <ChevronsLeft size={16} className="md:w-3.5 md:h-3.5" />
-                            </button>
-                            <button
-                                disabled={pageIndex === 0}
-                                onClick={() => setPageIndex(p => p - 1)}
-                                className="p-2 md:p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/10 disabled:opacity-20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all active:scale-95"
-                                title="Previous Page"
-                            >
-                                <ChevronLeft size={16} className="md:w-3.5 md:h-3.5" />
-                            </button>
-                            <button
-                                disabled={(pageIndex + 1) * PAGE_SIZE >= totalCount}
-                                onClick={() => setPageIndex(p => p + 1)}
-                                className="p-2 md:p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/10 disabled:opacity-20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all active:scale-95"
-                                title="Next Page"
-                            >
-                                <ChevronRight size={16} className="md:w-3.5 md:h-3.5" />
-                            </button>
-                            <button
-                                disabled={(pageIndex + 1) * PAGE_SIZE >= totalCount}
-                                onClick={() => setPageIndex(Math.max(0, Math.ceil(totalCount / PAGE_SIZE) - 1))}
-                                className="p-2 md:p-1.5 rounded-lg bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-300 border border-slate-200 dark:border-white/10 disabled:opacity-20 hover:bg-slate-100 dark:hover:bg-white/10 transition-all active:scale-95"
-                                title="Last Page"
-                            >
-                                <ChevronsRight size={16} className="md:w-3.5 md:h-3.5" />
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            {/* Mobile Filter Drawer */}
-            <div className={`fixed inset-0 z-[2000] md:hidden transition-all duration-300 ${isMobileFilterOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                {/* Backdrop */}
-                <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => setIsMobileFilterOpen(false)}></div>
-
-                {/* Drawer Content */}
-                <div className={`absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-white/5 transition-transform duration-500 ease-out shadow-2xl ${isMobileFilterOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                    <div className="p-6 pb-12 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500">
-                                    <Filter size={20} />
-                                </div>
-                                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 font-display">Filters</h2>
-                            </div>
-                            <button onClick={() => setIsMobileFilterOpen(false)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400">
-                                <X size={24} />
-                            </button>
-                        </div>
-
                         <div className="space-y-4">
                             <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="SEARCH BY ID OR NAME..."
-                                    className="w-full h-12 pl-12 pr-4 rounded-xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 text-sm font-bold text-slate-800 dark:text-slate-100 transition-all outline-none focus:border-indigo-500"
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground z-10" size={16} />
+                                <Input
+                                    placeholder="SEARCH DATASET..."
+                                    className="h-11 pl-10 bg-card/50 border-border/50 font-bold uppercase tracking-widest text-xs"
                                     value={filters.search}
                                     onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
                                 />
                             </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                <Select value={filters.district || "ALL_DISTRICTS"} onValueChange={(val) => setFilters(f => ({ ...f, district: val === "ALL_DISTRICTS" ? "" : val, tehsil: '', uc: '' }))}>
+                                    <SelectTrigger className="h-11 bg-card/50 text-xs font-bold uppercase tracking-wide">
+                                        <SelectValue placeholder="DISTRICT" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL_DISTRICTS">ALL DISTRICTS</SelectItem>
+                                        {districts.map((d) => (
+                                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Location Strategy</p>
-                                    <div className="space-y-3">
-                                        <ModernDropdown options={[{ label: 'ALL DISTRICTS', value: '' }, ...districts]} value={filters.district} onChange={(val) => setFilters(f => ({ ...f, district: val, tehsil: '', uc: '' }))} placeholder="DISTRICT" />
-                                        <ModernDropdown options={[{ label: 'ALL TEHSILS', value: '' }, ...tehsils]} value={filters.tehsil} onChange={(val) => setFilters(f => ({ ...f, tehsil: val, uc: '' }))} placeholder="TEHSIL" />
-                                        <ModernDropdown options={[{ label: 'ALL UCS', value: '' }, ...ucs]} value={filters.uc} onChange={(val) => setFilters(f => ({ ...f, uc: val }))} placeholder="UC / AREA" />
-                                    </div>
-                                </div>
+                                <Select value={filters.tehsil || "ALL_TEHSILS"} onValueChange={(val) => setFilters(f => ({ ...f, tehsil: val === "ALL_TEHSILS" ? "" : val, uc: '' }))}>
+                                    <SelectTrigger className="h-11 bg-card/50 text-xs font-bold uppercase tracking-wide">
+                                        <SelectValue placeholder="TEHSIL" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL_TEHSILS">ALL TEHSILS</SelectItem>
+                                        {tehsils.map((t) => (
+                                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Attribution</p>
-                                    <ModernDropdown options={[{ label: 'ALL SURVEYORS', value: '' }, ...surveyors]} value={filters.surveyor} onChange={(val) => setFilters(f => ({ ...f, surveyor: val }))} placeholder="SURVEYOR" />
-                                </div>
-                            </div>
+                                <Select value={filters.uc || "ALL_UCS"} onValueChange={(val) => setFilters(f => ({ ...f, uc: val === "ALL_UCS" ? "" : val }))}>
+                                    <SelectTrigger className="h-11 bg-card/50 text-xs font-bold uppercase tracking-wide">
+                                        <SelectValue placeholder="UC / AREA" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL_UCS">ALL UCS</SelectItem>
+                                        {ucs.map((u) => (
+                                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    onClick={() => { setFilters({ district: 'SARGODHA', tehsil: '', uc: '', surveyor: '', search: '', masterStatus: 'ALL' }); setIsMobileFilterOpen(false); }}
-                                    className="flex-1 h-14 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 font-black text-xs tracking-widest rounded-2xl border border-slate-200 dark:border-white/5 transition-all active:scale-95"
-                                >
-                                    RESET ALL
-                                </button>
-                                <button
-                                    onClick={() => setIsMobileFilterOpen(false)}
-                                    className="flex-[2] h-14 bg-indigo-600 text-white font-black text-xs tracking-widest rounded-2xl shadow-xl shadow-indigo-600/20 active:scale-95 transition-all"
-                                >
-                                    APPLY FILTERS
-                                </button>
+                                <Select value={filters.surveyor || "ALL_SURVEYORS"} onValueChange={(val) => setFilters(f => ({ ...f, surveyor: val === "ALL_SURVEYORS" ? "" : val }))}>
+                                    <SelectTrigger className="h-11 bg-card/50 text-xs font-bold uppercase tracking-wide">
+                                        <SelectValue placeholder="SURVEYOR" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ALL_SURVEYORS">ALL SURVEYORS</SelectItem>
+                                        {surveyors.map((s) => (
+                                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-12 border-dashed border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50 font-black uppercase tracking-widest"
+                                onClick={() => {
+                                    setFilters({ district: 'SARGODHA', tehsil: '', uc: '', surveyor: '', unitType: 'ALL', search: '', masterStatus: 'ALL' })
+                                    setMobileFiltersOpen(false)
+                                }}
+                            >
+                                Reset
+                            </Button>
+                            <Button className="flex-[2] h-12 font-black uppercase tracking-widest" onClick={() => setMobileFiltersOpen(false)}>
+                                Apply Filters
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Record Detail Sheet - Detail View */}
+            <Sheet open={!!selectedSurveyId} onOpenChange={(open) => !open && setSelectedSurveyId(null)}>
+                <SheetContent side="right" className="w-[100vw] sm:w-[540px] p-0 border-l border-border/50 bg-background sm:rounded-l-3xl overflow-hidden shadow-2xl">
+                    {selectedSurveyId && (() => {
+                        // Pre-calculate target IDs during render for stable, stateless navigation
+                        const currentIdx = records.findIndex(r => r && String(r.survey_id).trim() === String(selectedSurveyId).trim());
+
+                        const prevId = currentIdx > 0 ? records[currentIdx - 1].survey_id : null;
+                        const nextId = (currentIdx !== -1 && currentIdx < records.length - 1) ? records[currentIdx + 1].survey_id : null;
+
+                        return (
+                            <RecordDetail
+                                key={`detail-${selectedSurveyId}`}
+                                surveyId={selectedSurveyId}
+                                onClose={() => setSelectedSurveyId(null)}
+                                hasNext={nextId !== null && nextId !== undefined}
+                                hasPrev={prevId !== null && prevId !== undefined}
+                                onNext={nextId !== null && nextId !== undefined ? () => setSelectedSurveyId(nextId) : null}
+                                onPrev={prevId !== null && prevId !== undefined ? () => setSelectedSurveyId(prevId) : null}
+                            />
+                        )
+                    })()}
+                </SheetContent>
+            </Sheet>
+        </div >
     )
 }

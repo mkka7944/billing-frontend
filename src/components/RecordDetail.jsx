@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import {
-    X, User, MapPin, Calendar, Clock, Image as ImageIcon,
-    CreditCard, ExternalLink, AlertCircle, FileText, CheckCircle2,
-    RotateCcw, Maximize2, ZoomIn, ZoomOut, Move, ChevronLeft, ChevronRight
+    X, MapPin, Calendar, Clock, Image as ImageIcon,
+    CreditCard, ExternalLink, AlertCircle, FileText,
+    ChevronLeft, ChevronRight, Maximize2
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { shortenAreaName, formatLocationLabel } from '../lib/utils'
-import { StatusBadge, CopyButton, CurrencyText, ErrorNode } from './common/UIComponents'
+import { shortenAreaName } from '../lib/utils'
+import { CurrencyText } from './common/UIComponents'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
-export default function RecordDetail({ surveyId, onClose }) {
+export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNext, hasPrev }) {
     const [data, setData] = useState(null)
     const [bills, setBills] = useState([])
     const [financials, setFinancials] = useState({ totalDue: 0, totalPaid: 0, outstanding: 0, recoveryRate: 0, lastPaidDate: null })
@@ -17,68 +22,63 @@ export default function RecordDetail({ surveyId, onClose }) {
     const [error, setError] = useState(null)
     const [activeImage, setActiveImage] = useState(0)
     const [isGalleryOpen, setIsGalleryOpen] = useState(false)
-    const [zoom, setZoom] = useState(1)
-    const [position, setPosition] = useState({ x: 0, y: 0 })
 
     useEffect(() => {
         if (surveyId) {
-            // Reset states before fetching new unit
             setData(null)
             setBills([])
             setFinancials({ totalDue: 0, totalPaid: 0, outstanding: 0, recoveryRate: 0, lastPaidDate: null })
-            setZoom(1)
-            setPosition({ x: 0, y: 0 })
+            setActiveImage(0) // Reset image on record change
             fetchData()
         }
     }, [surveyId])
 
-    const handleReset = () => {
-        setZoom(1)
-        setPosition({ x: 0, y: 0 })
-    }
-
-    // Handle Keyboard Navigation for Gallery
+    // Keyboard Navigation for Gallery Modal
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (!isGalleryOpen) return
-            if (e.key === 'Escape') setIsGalleryOpen(false)
-            if (e.key === 'ArrowRight') setActiveImage(prev => (prev + 1) % (data?.image_urls?.length || 1))
-            if (e.key === 'ArrowLeft') setActiveImage(prev => (prev - 1 + (data?.image_urls?.length || 1)) % (data?.image_urls?.length || 1))
+            // Priority 0: Don't capture if typing
+            if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+            // Gallery Modal (Full Screen) - BLOCK ALL OTHER LISTENERS
+            if (isGalleryOpen) {
+                if (e.key === 'Escape') {
+                    setIsGalleryOpen(false);
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                }
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    if (data?.image_urls?.length > 1) {
+                        if (e.key === 'ArrowRight') setActiveImage(prev => (prev + 1) % data.image_urls.length);
+                        if (e.key === 'ArrowLeft') setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length);
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                    }
+                }
+                // When gallery is open, we consume all arrow keys to prevent parent navigation
+                if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                    e.stopImmediatePropagation();
+                }
+            }
         }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
+        // Use capturing phase to beat the parent listener in SurveyStatsView
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
     }, [isGalleryOpen, data])
 
     async function fetchData() {
         if (!surveyId) return
-
         try {
             setLoading(true)
             setError(null)
-
-            // ⚡ PHASE 1 OPTIMIZATION: UNIFIED 360-DEGREE FETCH
-            console.log('[Phase 1] Fetching Detail for ID:', surveyId)
-            const { data: rawResult, error: rpcError } = await supabase.rpc('get_unit_history_360', {
-                p_survey_id: surveyId
-            })
-            console.log('[Phase 1] RPC result:', rawResult)
-
+            const { data: rawResult, error: rpcError } = await supabase.rpc('get_unit_history_360', { p_survey_id: surveyId })
             if (rpcError) throw rpcError
 
-            // Supabase RPC can return an object or a single-item array
             const rpcData = Array.isArray(rawResult) ? rawResult[0] : rawResult
+            if (!rpcData || !rpcData.unit) throw new Error('No record found for the provided ID')
 
-            if (!rpcData || !rpcData.unit) {
-                console.warn('[Phase 1] No unit data returned for ID:', surveyId)
-                throw new Error('No record found for the provided ID')
-            }
-
-            // Data Mapping from RPC JSONB result
             setData(rpcData.unit)
             setBills(rpcData.bills || [])
-
             const stats = rpcData.stats || { total_due: 0, total_paid: 0, outstanding: 0, last_paid_date: null }
-
             setFinancials({
                 totalDue: Number(stats.total_due),
                 totalPaid: Number(stats.total_paid),
@@ -86,9 +86,7 @@ export default function RecordDetail({ surveyId, onClose }) {
                 lastPaidDate: stats.last_paid_date,
                 recoveryRate: stats.total_due > 0 ? (stats.total_paid / stats.total_due) * 100 : 0
             })
-
         } catch (err) {
-            console.error('[Phase 1] Error fetching detail:', err)
             setError(err.message)
         } finally {
             setLoading(false)
@@ -97,310 +95,292 @@ export default function RecordDetail({ surveyId, onClose }) {
 
     if (!surveyId) return null
 
+    // Unify Badge Styling with SurveyStatsView
+    const renderStatusBadge = () => {
+        if (!data) return null
+        if (data.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5">Archived</Badge>
+        if (data.is_biller) return <Badge variant="secondary" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-none">Active</Badge>
+        return <Badge variant="outline" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5 text-amber-600 border-amber-500/50 bg-amber-500/10">New Survey</Badge>
+    }
+
+    // Consumer Type Color Coding (Domestic / Commercial Correction)
+    const getConsumerTypeBadge = () => {
+        // Try multiple fields as data sources might vary between tables
+        const rawType = data?.unit_type || data?.consumer_type || data?.property_type || data?.consumer_category || data?.type || ''
+        const type = rawType.toLowerCase()
+        const baseClass = "h-4 px-1.5 text-[9px] uppercase tracking-tighter font-black"
+
+        // Map Domestic / Residential
+        if (type.includes('residen') || type.includes('domest') || type.includes('home')) {
+            return <Badge variant="outline" className={`${baseClass} bg-blue-500/10 text-blue-600 border-blue-500/30`}>Domestic</Badge>
+        }
+
+        // Map Commercial / Business
+        if (type.includes('commer') || type.includes('shop') || type.includes('office')) {
+            return <Badge variant="outline" className={`${baseClass} bg-purple-500/10 text-purple-600 border-purple-500/30`}>Commercial</Badge>
+        }
+
+        return <Badge variant="outline" className={baseClass}>{rawType || 'General'}</Badge>
+    }
+
     return (
-        <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 shadow-2xl border-l border-slate-200 dark:border-white/5 animate-fade-in overflow-hidden transition-colors font-sans">
-            {/* v4.12 Calibrated Header */}
-            <div className="bg-white dark:bg-slate-900 relative z-30 shrink-0">
-                <div className="flex items-stretch h-14 border-b border-slate-200 dark:border-white/5">
-                    {/* ID Segment - Reverted size */}
-                    <div className="px-6 flex items-center bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shrink-0 font-display font-black tracking-tighter tabular-nums leading-none text-xl md:text-2xl">
-                        {surveyId}
-                    </div>
-
-                    {/* Metadata Segment - Calibrated Typography */}
-                    <div className="flex-1 flex items-center px-4 gap-4 min-w-0 bg-slate-50/10 dark:bg-slate-900 border-x border-slate-200 dark:border-white/10">
-                        <div className="flex-1 min-w-0">
-                            <span className="text-[10px] md:text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-tight overflow-hidden break-words block max-h-8">
-                                {data?.surveyor_name || 'AUTO'}
+        <motion.div
+            className="flex flex-col h-full w-full bg-background font-sans"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={(e, { offset, velocity }) => {
+                const swipe = offset.x
+                const threshold = 100
+                if (swipe < -threshold) onNext?.()
+                if (swipe > threshold) onPrev?.()
+            }}
+        >
+            {/* Header - Compact Metadata View */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-black tabular-nums tracking-tighter leading-none text-primary">
+                            {surveyId}
+                        </h2>
+                        <div className="h-8 w-px bg-border/50" />
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground leading-none mb-1">
+                                {data?.surveyor_name || 'System Auto'}
                             </span>
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground tabular-nums">
+                                <span>{data?.survey_date || 'N/A'}</span>
+                                <span className="opacity-30">•</span>
+                                <span>{data?.survey_time || '--:--'}</span>
+                            </div>
                         </div>
-
-                        {/* Date/Time - Calibrated */}
-                        <div className="flex flex-col items-end shrink-0 border-l border-slate-200 dark:border-white/10 pl-4 h-8 justify-center">
-                            <span className="text-[11px] font-black text-indigo-500 tabular-nums leading-none mb-0.5">
-                                {data?.survey_date || 'N/A'}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 tabular-nums leading-none">
-                                {data?.survey_time || '--:--'}
-                            </span>
-                        </div>
                     </div>
+                </div>
 
-                    <button
-                        onClick={onClose}
-                        className="w-14 flex items-center justify-center bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-all active:scale-95 shrink-0"
+                {/* Record Navigation Arrows (Desktop) */}
+                <div className="flex items-center gap-1 border-l border-border/50 pl-3 ml-2">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-8 w-8 rounded-full transition-colors ${!hasPrev ? 'opacity-20 cursor-not-allowed' : 'hover:bg-muted opacity-100'}`}
+                        onClick={(e) => { e.stopPropagation(); if (hasPrev && onPrev) onPrev(); }}
+                        disabled={!hasPrev}
+                        title="Previous Record (Left Arrow)"
                     >
+                        <ChevronLeft size={18} />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-8 w-8 rounded-full transition-colors ${!hasNext ? 'opacity-20 cursor-not-allowed' : 'hover:bg-muted opacity-100'}`}
+                        onClick={(e) => { e.stopPropagation(); if (hasNext && onNext) onNext(); }}
+                        disabled={!hasNext}
+                        title="Next Record (Right Arrow)"
+                    >
+                        <ChevronRight size={18} />
+                    </Button>
+
+                    <div className="h-6 w-px bg-border/50 mx-1" />
+
+                    <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0">
                         <X size={20} />
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {loading ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-slate-400">
-                    <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-                    <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Calibrating Scale...</span>
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                    <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">Loading Data...</span>
                 </div>
             ) : error ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500 space-y-4">
-                    <AlertCircle size={48} className="text-rose-500 opacity-20" />
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                    <div className="p-4 rounded-full bg-destructive/10 text-destructive mb-2">
+                        <AlertCircle size={32} />
+                    </div>
                     <div className="space-y-1">
-                        <div className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Hydration Failure</div>
-                        <div className="text-[10px] font-bold opacity-60 uppercase tracking-tighter">{error}</div>
+                        <h3 className="font-bold text-lg">Unable to Load Record</h3>
+                        <p className="text-muted-foreground text-sm">{error}</p>
                     </div>
-                    <button
-                        onClick={fetchData}
-                        className="px-4 py-2 bg-indigo-500/10 text-indigo-500 text-[10px] font-black rounded-lg hover:bg-indigo-500/20 transition-all uppercase tracking-widest"
-                    >
-                        Retry Connection
-                    </button>
-                    <div className="text-[10px] opacity-40 italic max-w-xs mx-auto">
-                        This usually happens if the database connection times out. Check the [Performance Fix] script.
-                    </div>
+                    <Button variant="outline" onClick={fetchData} className="mt-4">Retry Connection</Button>
                 </div>
             ) : data ? (
-                <>
-                    <div className="flex-1 overflow-y-auto scrollbar-hide no-scrollbar">
-                        {/* v4.10 Compact Hero + Navigation Restoration */}
-                        <div
-                            className="relative h-[340px] overflow-hidden bg-white dark:bg-slate-900 group cursor-zoom-in"
-                            onClick={() => setIsGalleryOpen(true)}
-                        >
-                            <AnimatePresence mode="wait">
-                                {data.image_urls && data.image_urls.length > 0 ? (
-                                    <>
-                                        <motion.img
-                                            key={activeImage}
-                                            src={data.image_urls[activeImage]}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.4 }}
-                                            className="w-full h-full object-cover"
-                                        />
+                <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-4">
+                        {/* Image Gallery Hero - Reduced Margin & Subtle Arrows */}
+                        <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-muted group border border-border/50 shadow-sm">
+                            {data.image_urls && data.image_urls.length > 0 ? (
+                                <>
+                                    <img
+                                        src={data.image_urls[activeImage]}
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-zoom-in"
+                                        alt="Evidence"
+                                        onClick={() => setIsGalleryOpen(true)}
+                                    />
 
-                                        {/* v4.20 Legibility Scrim - Soft top gradient for text contrast */}
-                                        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/40 via-black/10 to-transparent pointer-events-none z-10" />
-
-                                        {/* v4.20 Moved Zoom Button - Top Left Integrated */}
-                                        <div
-                                            className="absolute top-20 left-4 bg-white/10 backdrop-blur-xl p-2 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100 z-40 shadow-xl cursor-pointer hover:bg-white/20 active:scale-95"
-                                            onClick={(e) => { e.stopPropagation(); setIsGalleryOpen(true); }}
-                                        >
-                                            <Maximize2 size={16} className="text-white drop-shadow-md" />
-                                        </div>
-
-                                        {/* v4.19 Ultra-Subtle Overlays - Edge-Touching & Transparent */}
-                                        <div className="absolute top-0 left-0 right-0 px-0 flex justify-between items-start pointer-events-none z-20">
-                                            {/* Identity Overlay */}
-                                            <div className="p-4 max-w-[260px] bg-black/5 backdrop-blur-[2px] flex flex-col gap-0.5 pointer-events-none rounded-br-2xl border-r border-b border-white/5">
-                                                <div className="bg-white/10 backdrop-blur-sm text-[7px] font-black text-white px-1.5 py-0.5 rounded leading-none uppercase tracking-[0.2em] w-fit mb-1 border border-white/5">
-                                                    IMAGE {activeImage + 1} / {data.image_urls.length}
-                                                </div>
-                                                <h3 className="text-base font-bold text-white tracking-tight leading-none mb-0.5 drop-shadow-lg">{data.consumer_name || 'Anonymous'}</h3>
-                                                <p className="text-[10px] font-medium text-white/70 flex items-center gap-1.5 leading-tight max-w-[220px] drop-shadow-md">
-                                                    <MapPin size={10} className="text-white/40 shrink-0" />
-                                                    {data.address || 'Address unverified'}
-                                                </p>
-                                            </div>
-
-                                            {/* Regional Overlay */}
-                                            <div className="p-4 max-w-[200px] bg-black/5 backdrop-blur-[2px] flex flex-col items-end pointer-events-none rounded-bl-2xl border-l border-b border-white/5">
-                                                <span className="text-[11px] font-black text-white/90 uppercase tracking-tight text-right leading-tight break-words max-w-full drop-shadow-lg">
-                                                    {data?.uc_name}
-                                                    <span className="block text-[8px] text-white/40 font-bold mt-1 tracking-widest drop-shadow-md">{data?.tehsil}</span>
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* v4.19 Fixed-Navigation Filmstrip - 3-Column Layout & Compact Geometry */}
-                                        <div className="absolute bottom-2 left-0 right-0 p-1 bg-black/5 backdrop-blur-[2px] rounded-2xl z-30 border border-white/5 mx-2 flex items-center">
-                                            {/* Fixed Left Navigation */}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: -220, behavior: 'smooth' }); }}
-                                                className="w-8 h-14 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all rounded-l-xl border-r border-white/5 shrink-0"
+                                    {/* Subtle Arrows (Gallery Nav) */}
+                                    {data.image_urls.length > 1 && (
+                                        <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-full bg-black/40 text-white hover:bg-black/60 border-0 backdrop-blur-md pointer-events-auto"
+                                                onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length); }}
                                             >
                                                 <ChevronLeft size={16} />
-                                            </button>
-
-                                            {/* Scrollable Gallery Lane */}
-                                            <div className="flex-1 relative overflow-hidden h-14 flex items-center">
-                                                <div
-                                                    id="gallery-container"
-                                                    className="flex gap-3 overflow-x-auto scrollbar-hide no-scrollbar snap-x py-1 px-12 items-center h-full"
-                                                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                                                >
-                                                    {/* v4.20 Geometry Fix: Start Spacer */}
-                                                    <div className="shrink-0 w-6" />
-                                                    {data.image_urls.map((url, i) => (
-                                                        <button
-                                                            key={`img-${i}`}
-                                                            onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
-                                                            className="shrink-0 snap-start relative transition-all"
-                                                        >
-                                                            <div className={`relative w-[48px] h-[48px] rounded-lg overflow-hidden border transition-all duration-300 ${i === activeImage ? 'border-white scale-110 z-10' : 'border-white/10 grayscale opacity-40 hover:opacity-100 hover:grayscale-0 hover:border-white/30'}`}>
-                                                                <img src={url} className="w-full h-full object-cover" loading="lazy" />
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                    {/* Compact Empty States */}
-                                                    {[...Array(8)].map((_, i) => (
-                                                        <div key={`empty-${i}`} className="shrink-0 snap-start opacity-10">
-                                                            <div className="w-[48px] h-[48px] rounded-lg border border-dashed border-white/30 flex items-center justify-center bg-white/5">
-                                                                <ImageIcon size={8} className="text-white/40" />
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {/* v4.20 Geometry Fix: End Spacer */}
-                                                    <div className="shrink-0 w-6" />
-                                                </div>
-                                            </div>
-
-                                            {/* Fixed Right Navigation */}
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); document.getElementById('gallery-container').scrollBy({ left: 220, behavior: 'smooth' }); }}
-                                                className="w-8 h-14 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all rounded-r-xl border-l border-white/5 shrink-0"
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-full bg-black/40 text-white hover:bg-black/60 border-0 backdrop-blur-md pointer-events-auto"
+                                                onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev + 1) % data.image_urls.length); }}
                                             >
                                                 <ChevronRight size={16} />
-                                            </button>
+                                            </Button>
                                         </div>
+                                    )}
 
-                                        {/* Zoom Button removed from here (v4.20) */}
-                                    </>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-200 dark:text-slate-800">
-                                        <ImageIcon size={48} strokeWidth={1} />
-                                        <span className="text-[10px] mt-3 font-black uppercase tracking-widest opacity-50">No Evidence Captured</span>
+                                    {/* Overlay Gradient */}
+                                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+
+                                    {/* Info Overlay */}
+                                    <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white pointer-events-none">
+                                        <div>
+                                            <div className="text-[9px] font-black uppercase tracking-wider opacity-80 mb-1">
+                                                Image {activeImage + 1} of {data.image_urls.length}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-[11px] font-bold">
+                                                <MapPin size={10} className="text-primary" />
+                                                {shortenAreaName(data.uc_name, data.city_district, data.tehsil)}
+                                            </div>
+                                        </div>
+                                        <Button
+                                            size="icon"
+                                            variant="secondary"
+                                            className="h-7 w-7 rounded-full bg-white/20 hover:bg-white/40 border-0 text-white backdrop-blur-md pointer-events-auto"
+                                            onClick={() => setIsGalleryOpen(true)}
+                                        >
+                                            <Maximize2 size={12} />
+                                        </Button>
                                     </div>
-                                )}
-                            </AnimatePresence>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                                    <ImageIcon size={32} className="opacity-20 mb-2" />
+                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">No Evidence</span>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="p-4 space-y-4">
-                            {/* Financial Bento Tiles - Calibrated */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
-                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Outstanding</span>
-                                    <div className="text-base font-bold text-slate-900 dark:text-white">
-                                        <CurrencyText amount={financials.outstanding} />
+                        {/* Customer Info Card - Compact */}
+                        <Card className="shadow-none border-border/60 bg-card/50">
+                            <CardContent className="p-3 flex items-center justify-between">
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Identity</p>
+                                    <h3 className="text-base font-bold leading-tight truncate pr-4">{data.consumer_name || 'Anonymous'}</h3>
+                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                        {getConsumerTypeBadge()}
+                                        <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{data.address || 'No Verified Address'}</p>
                                     </div>
                                 </div>
-                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
-                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Recovery</span>
-                                    <div className="text-base font-bold text-emerald-500 tabular-nums">
-                                        {financials.recoveryRate.toFixed(1)}%
-                                    </div>
+                                <div className="text-right shrink-0">
+                                    {renderStatusBadge()}
                                 </div>
-                                <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm space-y-1">
-                                    <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] block">Last Paid</span>
-                                    <div className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                                        {financials.lastPaidDate ? new Date(financials.lastPaidDate).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }) : 'N/A'}
-                                    </div>
-                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Financial Stats - Super Compact */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
+                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Due</p>
+                                <p className="text-xs font-bold text-foreground tabular-nums"><CurrencyText amount={financials.outstanding} /></p>
+                            </div>
+                            <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
+                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Paid</p>
+                                <p className="text-xs font-bold text-emerald-600 tabular-nums"><CurrencyText amount={financials.totalPaid} /></p>
+                            </div>
+                            <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
+                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Rate</p>
+                                <p className="text-xs font-bold text-indigo-600 tabular-nums">{financials.recoveryRate.toFixed(0)}%</p>
+                            </div>
+                        </div>
+
+                        {/* Transaction History - Density Adjusted */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Billing History</h4>
+                                <span className="text-[9px] font-bold opacity-50">{bills.length} Records</span>
                             </div>
 
-                            {/* Transaction Bento Module - Calibrated */}
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-xl shadow-sm flex flex-col overflow-hidden">
-                                <div className="px-5 py-4 border-b border-slate-50 dark:border-white/[0.03] flex items-center justify-between">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <CreditCard size={12} className="text-indigo-400" /> Transaction History
-                                    </h4>
-                                    <span className="text-[8px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-500 uppercase tracking-tighter">
-                                        {bills.length} Records
-                                    </span>
-                                </div>
-
-                                {bills.length > 0 ? (
-                                    <div className="divide-y divide-slate-50 dark:divide-white/[0.03]">
-                                        {bills.map(bill => (
-                                            <div key={bill.bill_month} className="p-4 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors group">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${bill.payment_status === 'PAID' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border-emerald-100 dark:border-emerald-500/20' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-100 dark:border-amber-500/20'}`}>
-                                                            <FileText size={16} />
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-tight">{bill.bill_month}</div>
-                                                            <div className="text-[9px] text-slate-400 font-mono flex items-center gap-1 opacity-80 mt-0.5">
-                                                                #{bill.psid}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <StatusBadge
-                                                        status={bill.payment_status}
-                                                        variant={bill.payment_status === 'PAID' ? 'success' : 'warning'}
-                                                    />
-                                                </div>
-
-                                                <div className="flex items-center justify-between mt-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Amount Due</span>
-                                                        <div className="text-sm font-bold"><CurrencyText amount={bill.amount_due} /></div>
-                                                    </div>
-                                                    <div className="flex flex-col text-right">
-                                                        <span className="text-[8px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Paid</span>
-                                                        <div className={`text-sm ${bill.payment_status === 'PAID' ? 'text-emerald-500 font-bold' : 'text-slate-400 font-medium'}`}>
-                                                            <CurrencyText amount={bill.amount_paid || 0} currency={null} />
-                                                        </div>
-                                                    </div>
-                                                </div>
+                            <div className="space-y-1.5">
+                                {bills.length > 0 ? bills.map((bill, i) => (
+                                    <div key={i} className="flex items-center justify-between p-2.5 rounded-lg border border-border/40 bg-card/30 hover:bg-card transition-colors group">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className={`w-7 h-7 rounded flex items-center justify-center border ${bill.payment_status === 'PAID' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-orange-500/10 border-orange-500/20 text-orange-600'}`}>
+                                                <FileText size={12} />
                                             </div>
-                                        ))}
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase leading-none">{bill.bill_month}</p>
+                                                <p className="text-[9px] text-muted-foreground font-mono mt-0.5">#{bill.psid}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className={`text-[11px] font-bold tabular-nums ${bill.payment_status === 'PAID' ? 'text-emerald-600' : 'text-foreground'}`}>
+                                                <CurrencyText amount={bill.amount_paid > 0 ? bill.amount_paid : bill.amount_due} />
+                                            </div>
+                                            <Badge variant={bill.payment_status === 'PAID' ? 'default' : 'secondary'} className="h-3.5 px-1 text-[8px] uppercase tracking-wider font-bold">
+                                                {bill.payment_status}
+                                            </Badge>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="p-10 text-center text-slate-400 text-[10px] font-medium italic opacity-60">
+                                )) : (
+                                    <div className="py-6 text-center text-[10px] text-muted-foreground italic border border-dashed border-border rounded-xl opacity-60">
                                         No linked transactions found.
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="h-24" />
                     </div>
+                </ScrollArea>
+            ) : null}
 
-                    {/* v4.12 Floating Footer - Calibrated */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-t border-slate-200 dark:border-white/5 z-40">
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-transparent hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-2xl text-rose-600 dark:text-rose-400 text-xs font-black transition-all border border-rose-200/50 dark:border-rose-500/20 active:scale-95 uppercase tracking-widest shadow-sm">
-                                <AlertCircle size={14} /> Log Ticket
-                            </button>
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-transparent hover:bg-sky-50 dark:hover:bg-sky-500/10 rounded-2xl text-sky-600 dark:text-sky-400 text-xs font-black transition-all border border-sky-200/50 dark:border-sky-500/20 active:scale-95 uppercase tracking-widest shadow-sm">
-                                <ExternalLink size={14} /> Site Visit
-                            </button>
-                        </div>
-                    </div>
-                </>
-            ) : (
-                <div className="flex-1 flex items-center justify-center text-slate-500 text-xs italic">
-                    Record not found.
-                </div>
-            )}
+            {/* Footer Actions */}
+            <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm shrink-0 grid grid-cols-2 gap-3">
+                <Button variant="outline" className="w-full text-xs font-black uppercase tracking-widest border-dashed">
+                    <AlertCircle size={14} className="mr-2 text-destructive" />
+                    Report Issue
+                </Button>
+                <Button className="w-full text-xs font-black uppercase tracking-widest">
+                    <ExternalLink size={14} className="mr-2" />
+                    Open In GIS
+                </Button>
+            </div>
 
-            {/* Gallery Portal */}
+            {/* Immersive Gallery Modal */}
             <AnimatePresence>
                 {isGalleryOpen && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 md:p-8"
+                        className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4"
                         onClick={() => setIsGalleryOpen(false)}
                     >
-                        <div className="absolute top-6 right-6 z-50 flex items-center gap-4">
-                            <div className="bg-white/10 px-3 py-1.5 rounded-lg text-white text-[10px] font-black border border-white/10 uppercase tracking-[0.2em]">
-                                {activeImage + 1} / {data?.image_urls?.length}
-                            </div>
-                            <button className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white border border-white/10">
+                        <div className="absolute top-4 right-4 z-50">
+                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 rounded-full" onClick={() => setIsGalleryOpen(false)}>
                                 <X size={24} />
-                            </button>
+                            </Button>
                         </div>
 
-                        <div className="flex-1 w-full flex items-center justify-center relative" onClick={e => e.stopPropagation()}>
+                        <div className="relative w-full h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
                             {data?.image_urls?.length > 1 && (
-                                <button
-                                    onClick={() => setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length)}
-                                    className="absolute left-0 p-6 text-white/30 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                                >
-                                    <ChevronLeft size={64} strokeWidth={1} />
-                                </button>
+                                <Button variant="ghost" size="icon" className="absolute left-4 text-white hover:bg-white/10 h-12 w-12 rounded-full" onClick={() => setActiveImage(prev => (prev - 1 + data.image_urls.length) % data.image_urls.length)}>
+                                    <ChevronLeft size={32} />
+                                </Button>
                             )}
 
                             <motion.img
@@ -408,25 +388,22 @@ export default function RecordDetail({ surveyId, onClose }) {
                                 src={data.image_urls[activeImage]}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-xl"
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                             />
 
                             {data?.image_urls?.length > 1 && (
-                                <button
-                                    onClick={() => setActiveImage(prev => (prev + 1) % data.image_urls.length)}
-                                    className="absolute right-0 p-6 text-white/30 hover:text-white hover:bg-white/5 rounded-full transition-all"
-                                >
-                                    <ChevronRight size={64} strokeWidth={1} />
-                                </button>
+                                <Button variant="ghost" size="icon" className="absolute right-4 text-white hover:bg-white/10 h-12 w-12 rounded-full" onClick={() => setActiveImage(prev => (prev + 1) % data.image_urls.length)}>
+                                    <ChevronRight size={32} />
+                                </Button>
                             )}
                         </div>
 
-                        <div className="absolute bottom-10 text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">
-                            Use arrow keys to navigate
+                        <div className="absolute bottom-6 text-white/50 text-xs font-black uppercase tracking-widest">
+                            {activeImage + 1} / {data.image_urls.length}
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
     )
 }

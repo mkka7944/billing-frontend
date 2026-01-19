@@ -2,10 +2,12 @@ import { NavLink } from 'react-router-dom'
 import {
     Map as MapIcon, Database, Users, CreditCard,
     Ticket, Settings, Layers, LogOut, ChevronRight,
-    BarChart3, FileText, Search, Zap
+    BarChart3, FileText, Search, Zap,
+    PanelLeftClose, PanelLeftOpen
 } from 'lucide-react'
 import { useUI } from '../context/UIContext'
 import { useTheme } from '../context/ThemeContext'
+import { motion } from 'framer-motion'
 
 export default function Sidebar() {
     const { setIsSidebarOpen } = useUI()
@@ -52,60 +54,101 @@ export default function Sidebar() {
             path: '/settings',
             icon: <Settings size={18} />,
             category: 'System'
+        },
+        {
+            label: 'Style Lab',
+            path: '/style-lab',
+            icon: <Zap size={18} />,
+            category: 'System'
         }
     ]
 
     const categories = ['GIS', 'Operations', 'Intelligence', 'System']
+    const { isSidebarCollapsed, setIsSidebarCollapsed } = useUI()
 
     return (
-        <div className="flex flex-col h-full font-sans transition-colors duration-300 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-white/5 animate-fade-in">
-            {/* Logo Section */}
-            <div className="p-6 border-b border-slate-200 dark:border-white/5 mb-2">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600 shadow-indigo-500/20">
-                        <Layers className="text-white" size={22} />
+        <div className={`flex flex-col h-full font-sans transition-all duration-300 bg-background border-r border-border animate-fade-in relative overflow-hidden ${isSidebarCollapsed ? 'items-center' : ''}`}>
+            {/* Logo Section - Refined Zinc */}
+            {/* Logo Section - Refined Zinc */}
+            <div className={`h-14 flex items-center border-b border-border/40 mb-2 bg-slate-50/10 backdrop-blur-sm shrink-0 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-4'}`}>
+                <div className={`flex items-center gap-3 overflow-hidden ${isSidebarCollapsed ? 'w-auto' : ''}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 shadow-sm transition-transform hover:rotate-3 duration-500">
+                        <Layers className="text-zinc-600 dark:text-zinc-400" size={18} />
                     </div>
-                    <div className="overflow-hidden">
-                        <h1 className="text-xl font-bold tracking-tight whitespace-nowrap premium-gradient-text">
-                            Billing Map
-                        </h1>
-                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5">
-                            v4.0 Enterprise
-                        </p>
-                    </div>
+                    {!isSidebarCollapsed && (
+                        <div className="overflow-hidden min-w-0">
+                            <h1 className="text-lg font-black tracking-tight whitespace-nowrap text-zinc-900 dark:text-zinc-100 uppercase truncate">
+                                Billing<span className="text-indigo-500">.</span>Map
+                            </h1>
+                        </div>
+                    )}
                 </div>
+                {!isSidebarCollapsed && (
+                    <button onClick={() => setIsSidebarCollapsed(true)} className="text-muted-foreground hover:text-foreground hidden md:block">
+                        <PanelLeftClose size={16} />
+                    </button>
+                )}
+                {isSidebarCollapsed && (
+                    <button onClick={() => setIsSidebarCollapsed(false)} className="absolute top-4 right-[-100px] group-hover:right-4 text-muted-foreground">
+                        {/* Hidden trigger managed via parent hover or explicit button */}
+                    </button>
+                )}
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-8 custom-scrollbar">
+            {/* Collapse Trigger for Mini Mode */}
+            {isSidebarCollapsed && (
+                <div className="absolute top-0 w-full h-14 flex items-center justify-center z-20 cursor-pointer" onClick={() => setIsSidebarCollapsed(false)} title="Expand Sidebar">
+                </div>
+            )}
+
+            {/* Navigation - High Density */}
+            <nav className={`flex-1 overflow-y-auto ${isSidebarCollapsed ? 'px-2' : 'px-4'} py-2 space-y-8 no-scrollbar scrollbar-hide w-full`}>
                 {categories.map(cat => {
                     const items = navItems.filter(i => i.category === cat)
                     if (items.length === 0) return null
 
                     return (
                         <div key={cat} className="space-y-1">
-                            <h3 className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">
-                                {cat}
-                            </h3>
+                            {!isSidebarCollapsed && (
+                                <h3 className="px-4 text-[9px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.3em] mb-4">
+                                    {cat}
+                                </h3>
+                            )}
+                            {isSidebarCollapsed && (
+                                <div className="h-px bg-border/50 mx-2 my-2" />
+                            )}
                             {items.map(item => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
                                     onClick={() => setIsSidebarOpen(false)}
+                                    title={isSidebarCollapsed ? item.label : ''}
                                     className={({ isActive }) => `
-                                        flex items-center justify-between px-4 py-3 rounded-xl transition-all group
+                                        flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'justify-between px-4 py-2.5'} rounded-lg transition-all group relative
                                         ${isActive
-                                            ? 'bg-indigo-600 dark:bg-indigo-500/10 text-white dark:text-indigo-400 shadow-md shadow-indigo-600/10 dark:shadow-none'
-                                            : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-slate-200 border border-transparent'}
+                                            ? 'bg-zinc-100 dark:bg-white/5 text-zinc-900 dark:text-white border border-zinc-200 dark:border-white/10'
+                                            : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-white/[0.02] hover:text-zinc-900 dark:hover:text-zinc-100 border border-transparent'}
                                     `}
                                 >
                                     {({ isActive }) => (
                                         <>
+                                            {isActive && !isSidebarCollapsed && (
+                                                <motion.div
+                                                    layoutId="active-indicator"
+                                                    className="absolute left-0 w-0.5 h-4 bg-indigo-500 rounded-full"
+                                                />
+                                            )}
                                             <div className="flex items-center gap-3">
-                                                <span className="transition-transform group-hover:scale-110">{item.icon}</span>
-                                                <span className="text-sm font-medium">{item.label}</span>
+                                                <span className={`transition-all duration-300 ${isActive ? 'text-indigo-500 scale-110' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-100'}`}>{item.icon}</span>
+                                                {!isSidebarCollapsed && (
+                                                    <span className={`text-[13px] font-bold tracking-tight ${isActive ? 'font-black' : ''}`}>
+                                                        {item.label}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {!isSidebarCollapsed && (
+                                                <ChevronRight size={14} className={`opacity-0 group-hover:opacity-40 transition-opacity ${isActive ? 'text-indigo-500 opacity-60' : ''}`} />
+                                            )}
                                         </>
                                     )}
                                 </NavLink>
@@ -115,24 +158,24 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            {/* User Profile */}
-            <div className="p-4 mt-auto">
-                <div className="p-3 rounded-2xl border flex items-center justify-between group cursor-pointer shadow-sm transition-all bg-white dark:bg-slate-800 border-slate-200 dark:border-white/5">
+            {/* User Profile - Bento Style Neutral */}
+            <div className={`mt-auto ${isSidebarCollapsed ? 'p-2' : 'p-4'}`}>
+                <div className={`rounded-xl border border-border bg-white dark:bg-zinc-950 flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'justify-between p-3'} group cursor-pointer shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all`}>
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <div className="relative w-9 h-9 rounded-full p-[2px] bg-gradient-to-tr from-indigo-500 to-emerald-500">
-                                <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden bg-white dark:bg-slate-900">
-                                    <span className="text-xs font-bold uppercase tracking-tighter text-indigo-600 dark:text-white">AD</span>
-                                </div>
+                            <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-border flex items-center justify-center overflow-hidden">
+                                <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tighter">AD</span>
                             </div>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 rounded-full bg-emerald-500 border-white dark:border-slate-900"></div>
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 rounded-full bg-emerald-500 border-white dark:border-zinc-950"></div>
                         </div>
-                        <div className="overflow-hidden">
-                            <div className="text-xs font-bold truncate font-display text-slate-800 dark:text-slate-200">Admin User</div>
-                            <div className="text-[10px] font-medium truncate text-slate-500">Sargodha HQ</div>
-                        </div>
+                        {!isSidebarCollapsed && (
+                            <div className="overflow-hidden">
+                                <div className="text-[12px] font-black truncate text-zinc-900 dark:text-zinc-100 uppercase tracking-tight">System Admin</div>
+                                <div className="text-[9px] font-bold truncate text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">Sargodha HQ</div>
+                            </div>
+                        )}
                     </div>
-                    <div className="p-2 rounded-lg transition-all shrink-0 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-400/10">
+                    <div className="p-2 rounded-lg transition-all shrink-0 text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20">
                         <LogOut size={16} />
                     </div>
                 </div>
