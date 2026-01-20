@@ -7,44 +7,44 @@ const ThemeContext = createContext();
  */
 const SURFACE_PALETTES = {
     antigravity: {
-        name: 'Antigravity Pro',
-        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 100%' },
-        dark: { background: '240 5% 10%', secondary: '240 5% 7%', card: '240 5% 14%', border: '240 5% 18%' }
+        name: 'Antigravity Pro', // DEEP DARK
+        light: { background: '240 5% 98%', secondary: '240 5% 94%', card: '0 0% 100%', border: '240 6% 90%' },
+        dark: { background: '240 5% 8%', secondary: '240 5% 5%', card: '240 5% 12%', border: '240 5% 16%' }
     },
     github: {
-        name: 'GitHub Dark', // High-fidelity GitHub aesthetic
-        light: { background: '0 0% 100%', secondary: '210 20% 98%', card: '0 0% 100%', border: '210 20% 90%' },
-        dark: { background: '222 13% 7%', secondary: '222 13% 10%', card: '222 13% 12%', border: '210 12% 20%' }
+        name: 'GitHub Dark', // DEEP DARK
+        light: { background: '210 20% 98%', secondary: '210 20% 95%', card: '0 0% 100%', border: '210 20% 88%' },
+        dark: { background: '222 13% 6%', secondary: '222 13% 4%', card: '222 13% 9%', border: '210 12% 18%' }
     },
     mocha: {
-        name: 'Mocha Slate', // Warm, earthy dark mode
-        light: { background: '30 15% 98%', secondary: '30 15% 95%', card: '0 0% 100%', border: '30 10% 90%' },
-        dark: { background: '20 5% 10%', secondary: '20 5% 13%', card: '20 5% 15%', border: '20 5% 20%' }
+        name: 'Catppuccin Mocha', // DEEP WARM DARK
+        light: { background: '30 15% 97%', secondary: '30 15% 92%', card: '0 0% 100%', border: '30 10% 85%' },
+        dark: { background: '240 21% 12%', secondary: '240 21% 15%', card: '240 21% 18%', border: '240 21% 25%' }
     },
     cloud: {
-        name: 'Cloud Paper',
-        light: { background: '0 0% 100%', secondary: '210 20% 98%', card: '0 0% 100%', border: '210 20% 90%' },
-        dark: { background: '210 20% 4%', secondary: '210 20% 2%', card: '210 20% 6%', border: '210 10% 12%' }
+        name: 'Lighter Cloud', // LIGHT DARK TONE
+        light: { background: '210 20% 99%', secondary: '210 20% 94%', card: '0 0% 100%', border: '210 20% 88%' },
+        dark: { background: '210 10% 22%', secondary: '210 10% 18%', card: '210 10% 26%', border: '210 10% 32%' }
     },
     ivory: {
-        name: 'Soft Ivory',
-        light: { background: '45 20% 99%', secondary: '45 15% 96%', card: '0 0% 100%', border: '45 10% 90%' },
-        dark: { background: '45 10% 4%', secondary: '45 10% 2%', card: '45 10% 6%', border: '45 5% 12%' }
+        name: 'Soft Ivory', // LIGHT DARK TONE
+        light: { background: '45 20% 98%', secondary: '45 15% 93%', card: '0 0% 100%', border: '45 10% 86%' },
+        dark: { background: '45 5% 22%', secondary: '45 5% 18%', card: '45 5% 26%', border: '45 5% 32%' }
     },
     zinc: {
-        name: 'Industrial Zinc',
-        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 90%' },
-        dark: { background: '240 10% 4%', secondary: '240 10% 2%', card: '240 10% 6%', border: '240 5% 12%' }
+        name: 'Industrial Zinc', // LIGHT DARK TONE
+        light: { background: '240 5% 99%', secondary: '240 5% 92%', card: '0 0% 100%', border: '240 5% 86%' },
+        dark: { background: '240 4% 20%', secondary: '240 4% 16%', card: '240 4% 24%', border: '240 4% 30%' }
     },
     obsidian: {
-        name: 'Onyx Void',
-        light: { background: '0 0% 100%', secondary: '240 4.8% 95.9%', card: '0 0% 100%', border: '240 5.9% 90%' },
-        dark: { background: '0 0% 0%', secondary: '0 0% 5%', card: '0 0% 8%', border: '0 0% 12%' }
+        name: 'Graphite Slate', // LIGHT DARK TONE (Used to be Onyx Void)
+        light: { background: '0 0% 100%', secondary: '0 0% 96%', card: '0 0% 100%', border: '0 0% 90%' },
+        dark: { background: '240 4% 16%', secondary: '240 4% 12%', card: '240 4% 20%', border: '240 4% 26%' }
     },
     emerald: {
-        name: 'Himalayan Ridge',
-        light: { background: '142.1 40% 99%', secondary: '142.1 30% 96%', card: '0 0% 100%', border: '142.1 30% 92%' },
-        dark: { background: '142.1 60% 3%', secondary: '142.1 50% 8%', card: '142.1 40% 5%', border: '142.1 50% 10%' }
+        name: 'Himalayan Ridge', // LIGHT DARK TONE
+        light: { background: '142.1 40% 98%', secondary: '142.1 30% 93%', card: '0 0% 100%', border: '142.1 30% 88%' },
+        dark: { background: '142.1 20% 20%', secondary: '142.1 20% 16%', card: '142.1 20% 24%', border: '142.1 20% 30%' }
     }
 };
 

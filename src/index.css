@@ -15,21 +15,27 @@
     --primary: 240 5% 50%;
     /* Middle Gray */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 90%;
-    /* Light Gray */
+    --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --paid: 142.1 70.6% 45.3%;
     --unpaid: 0 84.2% 60.2%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
     --ring: 240 5% 50%;
     --radius: 0.5rem;
+
+    /* Extended Gray Tints for Light Mode "Punch" */
+    --gray-50: 0 0% 98%;
+    --gray-100: 240 5% 96%;
+    --gray-200: 240 6% 90%;
+    --gray-300: 240 5% 84%;
+    --gray-400: 240 5% 65%;
   }
 
   .dark {
@@ -40,14 +46,12 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
     --primary: 240 5% 30%;
-    /* Dark Gray */
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 3.7% 20%;
-    /* Even Darker Gray */
+    --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --muted: 240 4% 12%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 12%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -138,12 +142,12 @@
 
   /* Compact KPI Cards */
   .modern-card-compact {
-    @apply p-4 md:py-3 md:px-5 rounded-panel border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 shadow-sm transition-all;
+    @apply p-3 md:py-2.5 md:px-4 rounded-panel border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 shadow-sm transition-all;
   }
 
   /* Unified Gap Utility */
   .modern-gap-tight {
-    @apply gap-2 md:gap-3;
+    @apply gap-1.5 md:gap-2;
   }
 
   /* Premium Scrollbar */
