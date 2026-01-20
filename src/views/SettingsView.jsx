@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Check, Moon, Sun, Palette, Layout, MousePointer2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Check, Moon, Sun, Palette, Layout, MousePointer2, ChevronDown, ChevronUp, Lock, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function SettingsView() {
@@ -11,6 +12,8 @@ export default function SettingsView() {
         surfacePalette, setSurfacePalette, palettes,
         accentColor, setAccentColor, accents
     } = useTheme()
+
+    const { isAdmin, permissions } = useAuth()
 
     // State for collapsible sections
     const [openSections, setOpenSections] = useState({
@@ -34,7 +37,9 @@ export default function SettingsView() {
                 <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase leading-none">Global<span className="text-primary">.</span>Config</h2>
             </div>
 
-            <div className="flex flex-col gap-3 w-full">
+            {/* Intelligent Grid: items-start decouples vertical stretching */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-start gap-4 w-full">
+
                 {/* 1. Appearance Section */}
                 <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300">
                     <button
@@ -43,13 +48,13 @@ export default function SettingsView() {
                     >
                         <div className="flex items-center gap-2">
                             <Sun size={14} className="text-primary" />
-                            <span className="text-xs font-black uppercase tracking-tight">Appearance Profile</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight">Appearance Profile</span>
                         </div>
                         {openSections.appearance ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
                     </button>
                     {openSections.appearance && (
                         <CardContent className="p-2 animate-in slide-in-from-top-4 duration-500">
-                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={() => setTargetTheme('light')}
                                     className={cn(
@@ -58,7 +63,7 @@ export default function SettingsView() {
                                     )}
                                 >
                                     <Sun size={14} className={cn(theme === 'light' ? "text-amber-500" : "text-muted-foreground")} />
-                                    <span className="text-[11px] font-black uppercase tracking-tight">Daylight</span>
+                                    <span className="text-[10px] font-black uppercase tracking-tight">Daylight</span>
                                 </button>
 
                                 <button
@@ -69,7 +74,7 @@ export default function SettingsView() {
                                     )}
                                 >
                                     <Moon size={14} className={cn(theme === 'dark' ? "text-indigo-400" : "text-muted-foreground")} />
-                                    <span className="text-[11px] font-black uppercase tracking-tight">Void</span>
+                                    <span className="text-[10px] font-black uppercase tracking-tight">Void</span>
                                 </button>
                             </div>
                         </CardContent>
@@ -84,13 +89,13 @@ export default function SettingsView() {
                     >
                         <div className="flex items-center gap-2">
                             <Layout size={14} className="text-primary" />
-                            <span className="text-xs font-black uppercase tracking-tight">Surface Architecture</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight">Surface Architecture</span>
                         </div>
                         {openSections.surface ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
                     </button>
                     {openSections.surface && (
                         <CardContent className="p-2 animate-in slide-in-from-top-4 duration-500">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 {Object.entries(palettes).map(([id, palette]) => {
                                     const activeSurface = theme === 'dark' ? palette.dark : palette.light
                                     const isSelected = surfacePalette === id
@@ -104,12 +109,12 @@ export default function SettingsView() {
                                                 isSelected && "ring-1 ring-primary border-primary bg-card"
                                             )}
                                         >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-[10px] font-black uppercase tracking-tight truncate group-hover:text-primary transition-colors">{palette.name}</span>
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <span className="text-[9px] font-black uppercase tracking-tight truncate group-hover:text-primary transition-colors">{palette.name}</span>
                                                 {isSelected && <Check size={8} className="text-primary" strokeWidth={4} />}
                                             </div>
 
-                                            <div className="flex items-center gap-0.5 w-full h-3 rounded overflow-hidden border border-border/40">
+                                            <div className="flex items-center gap-0.5 w-full h-2.5 rounded overflow-hidden border border-border/40">
                                                 <div className="flex-1 h-full" style={{ backgroundColor: `hsl(${activeSurface.background})` }} />
                                                 <div className="flex-1 h-full" style={{ backgroundColor: `hsl(${activeSurface.secondary})` }} />
                                                 <div className="flex-1 h-full" style={{ backgroundColor: `hsl(${activeSurface.card})` }} />
@@ -130,13 +135,13 @@ export default function SettingsView() {
                     >
                         <div className="flex items-center gap-2">
                             <MousePointer2 size={14} className="text-primary" />
-                            <span className="text-xs font-black uppercase tracking-tight">Component Tints</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight">Component Tints</span>
                         </div>
                         {openSections.accent ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
                     </button>
                     {openSections.accent && (
                         <CardContent className="p-2 animate-in slide-in-from-top-4 duration-500">
-                            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 gap-1.5">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1.5">
                                 {Object.entries(accents).map(([id, accent]) => {
                                     const activeAccent = theme === 'dark' ? accent.dark : accent.light
                                     const isSelected = accentColor === id
@@ -157,7 +162,7 @@ export default function SettingsView() {
                                             >
                                                 {isSelected && <Check size={8} style={{ color: `hsl(${activeAccent.foreground})` }} strokeWidth={4} />}
                                             </div>
-                                            <span className="text-[8px] font-bold uppercase tracking-tighter truncate w-full text-center">{accent.name.split(' ')[0]}</span>
+                                            <span className="text-[7px] font-bold uppercase tracking-tighter truncate w-full text-center">{accent.name.split(' ')[0]}</span>
                                         </button>
                                     )
                                 })}
@@ -166,11 +171,105 @@ export default function SettingsView() {
                     )}
                 </Card>
 
-                {/* Footer Section */}
-                <div className="px-2 flex justify-between items-center py-2 opacity-30">
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em]">Billing.Map.Node v4.5</span>
-                    <span className="text-[7px] font-black uppercase tracking-[0.2em]">Sargodha HQ</span>
-                </div>
+                {/* 4. User Access Control (Admin Only) */}
+                {isAdmin && (
+                    <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300 w-full lg:col-span-1">
+                        <button
+                            onClick={() => toggleSection('permissions')}
+                            className="w-full text-left focus:outline-none group px-3 py-2 border-b border-border/10 flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Lock size={14} className="text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-tight">Access Control Protocol</span>
+                            </div>
+                            {openSections.permissions ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                        </button>
+                        {openSections.permissions && (
+                            <CardContent className="p-2 animate-in slide-in-from-top-4 duration-500">
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between mb-2 px-1">
+                                        <div className="space-y-0.5 max-w-[60%]">
+                                            <h4 className="text-[9px] font-black uppercase tracking-widest text-primary truncate">Composite Permissions</h4>
+                                            <p className="text-[8px] text-muted-foreground uppercase font-bold truncate">Baseline accessibility</p>
+                                        </div>
+                                        <Button size="sm" className="h-6 px-2 text-[8px] font-black uppercase tracking-widest bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 shrink-0">
+                                            Sync
+                                        </Button>
+                                    </div>
+
+                                    <div className="rounded-lg border border-border/40 bg-card/20 overflow-hidden shadow-inner overflow-x-auto no-scrollbar">
+                                        <table className="w-full text-left border-collapse min-w-[200px]">
+                                            <thead>
+                                                <tr className="bg-muted/30 border-b border-border/40">
+                                                    <th className="p-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground">ID</th>
+                                                    <th className="p-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground text-center hidden sm:table-cell">Status</th>
+                                                    <th className="p-2 text-[8px] font-black uppercase tracking-widest text-muted-foreground text-right">Access</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/20">
+                                                {[
+                                                    { id: 'map', name: 'Map' },
+                                                    { id: 'surveys', name: 'Surveys' },
+                                                    { id: 'financials', name: 'Finance' },
+                                                    { id: 'performance', name: 'Staff' },
+                                                    { id: 'tickets', name: 'Tickets' },
+                                                    { id: 'stats', name: 'Stats' },
+                                                    { id: 'style_lab', name: 'Style' }
+                                                ].map((comp) => (
+                                                    <tr key={comp.id} className="hover:bg-white/5 transition-colors group">
+                                                        <td className="p-2">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="w-1 h-2.5 bg-primary/40 rounded-full group-hover:bg-primary transition-colors shrink-0" />
+                                                                <span className="text-[9px] font-black uppercase tracking-tight truncate">{comp.name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-2 text-center hidden sm:table-cell">
+                                                            <span className={cn(
+                                                                "text-[7px] font-black px-1 py-0.5 rounded uppercase tracking-widest",
+                                                                permissions?.[comp.id] !== false ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"
+                                                            )}>
+                                                                {permissions?.[comp.id] !== false ? "OK" : "NO"}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-2 text-right">
+                                                            <div className="inline-flex items-center p-0.5 rounded-lg border border-border bg-background/40">
+                                                                <button
+                                                                    className={cn(
+                                                                        "p-1 rounded-md transition-all",
+                                                                        permissions?.[comp.id] !== false ? "bg-emerald-500 text-white shadow-lg" : "text-muted-foreground hover:bg-emerald-500/10"
+                                                                    )}
+                                                                >
+                                                                    <Check size={8} strokeWidth={4} />
+                                                                </button>
+                                                                <button
+                                                                    className={cn(
+                                                                        "p-1 rounded-md transition-all",
+                                                                        permissions?.[comp.id] === false ? "bg-rose-500 text-white shadow-lg" : "text-muted-foreground hover:bg-rose-500/10"
+                                                                    )}
+                                                                >
+                                                                    <Lock size={8} strokeWidth={4} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p className="text-[7px] font-bold text-muted-foreground uppercase text-center opacity-50 px-2">
+                                        Real-time profile propagation active
+                                    </p>
+                                </div>
+                            </CardContent>
+                        )}
+                    </Card>
+                )}
+            </div>
+
+            {/* Footer Section */}
+            <div className="px-2 flex justify-between items-center py-2 opacity-30 mt-auto">
+                <span className="text-[7px] font-black uppercase tracking-[0.2em]">Billing.Map.Node v4.5</span>
+                <span className="text-[7px] font-black uppercase tracking-[0.2em]">Sargodha HQ</span>
             </div>
         </div>
     )

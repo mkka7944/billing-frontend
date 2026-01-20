@@ -1,6 +1,7 @@
 import { Search, Command, Bell, User, Sun, Moon, Zap, Menu } from 'lucide-react'
 import { useSearch } from '../context/SearchContext'
 import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/AuthContext'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -8,6 +9,7 @@ import { Badge } from './ui/badge'
 export default function Header({ onMenuClick }) {
     const { query, setQuery } = useSearch()
     const { theme, toggleTheme } = useTheme()
+    const { profile, isAdmin } = useAuth()
 
     return (
         <header className="h-14 border-b border-border bg-background/95 flex items-center justify-between px-4 md:px-6 z-40 transition-all backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -64,10 +66,15 @@ export default function Header({ onMenuClick }) {
 
                 <div className="flex items-center gap-3 pl-2">
                     <div className="text-right hidden sm:block">
-                        <div className="text-[11px] font-black text-foreground uppercase tracking-tight">System Admin</div>
-                        <div className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-0.5">Live Node</div>
+                        <div className="text-[11px] font-black text-foreground uppercase tracking-tight">
+                            {profile?.full_name || 'System User'}
+                        </div>
+                        <div className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-0.5 group flex items-center gap-1">
+                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
+                            {isAdmin ? 'System Admin' : 'Field Operator'}
+                        </div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-primary shadow-sm group hover:scale-105 transition-transform">
+                    <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-primary shadow-sm hover:border-primary/40 transition-all">
                         <User size={16} />
                     </div>
                 </div>

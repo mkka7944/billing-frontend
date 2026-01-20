@@ -45,6 +45,11 @@ const SURFACE_PALETTES = {
         name: 'Himalayan Ridge', // LIGHT DARK TONE
         light: { background: '142.1 40% 98%', secondary: '142.1 30% 93%', card: '0 0% 100%', border: '142.1 30% 88%' },
         dark: { background: '142.1 20% 20%', secondary: '142.1 20% 16%', card: '142.1 20% 24%', border: '142.1 20% 30%' }
+    },
+    supabase: {
+        name: 'Supabase Studio',
+        light: { background: '0 0% 100%', secondary: '154 6% 96%', card: '0 0% 100%', border: '154 6% 90%' },
+        dark: { background: '160 2% 9%', secondary: '160 2% 12%', card: '160 2% 15%', border: '160 2% 20%' }
     }
 };
 
@@ -101,6 +106,11 @@ const ACCENT_COLORS = {
         name: 'Basic Lead',
         light: { primary: '240 6% 10%', foreground: '0 0% 98%' },
         dark: { primary: '0 0% 98%', foreground: '240 6% 10%' }
+    },
+    supabase_emerald: {
+        name: 'Supabase Emerald',
+        light: { primary: '153 60% 53%', foreground: '0 0% 0%' },
+        dark: { primary: '153 60% 53%', foreground: '0 0% 0%' }
     }
 };
 
