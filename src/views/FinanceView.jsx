@@ -67,6 +67,9 @@ export default function FinanceView() {
         search: ''
     })
 
+    const [retentionData, setRetentionData] = useState(null)
+    const [retentionLoading, setRetentionLoading] = useState(false)
+
     const [openSections, setOpenSections] = useState({
         tehsil: true,
         mcuc: true,
@@ -118,29 +121,36 @@ export default function FinanceView() {
                 return
             }
 
-            console.log("Finance Metrics Data Received:", data)
+            // Defensive Parsing: Handle both object and array-of-one-object returns
+            const result = Array.isArray(data) ? data[0] : data
+            if (!result) {
+                console.warn("Summary RPC result is empty.")
+                return
+            }
+
+            console.log("Finance Metrics Data Received:", result)
             setSummaryData({
-                grand_totals: data.grand_totals || { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0, total_transactions: 0 },
-                tehsils: (data.tehsil_stats || []).map(i => ({
+                grand_totals: result.grand_totals || { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0, total_transactions: 0 },
+                tehsils: (result.tehsil_stats || []).map(i => ({
                     name: i.name || 'UNKNOWN',
-                    units: i.total_units || 0,
-                    paid: i.total_paid || 0,
-                    transactions: i.total_transactions || 0,
-                    amount: i.total_collected || 0
+                    units: Number(i.total_units || 0),
+                    paid: Number(i.total_paid || 0),
+                    transactions: Number(i.total_transactions || 0),
+                    amount: Number(i.total_collected || 0)
                 })),
-                mcucs: (data.uc_stats || []).map(i => ({
+                mcucs: (result.uc_stats || []).map(i => ({
                     name: i.name || 'UNKNOWN',
-                    units: i.total_units || 0,
-                    paid: i.total_paid || 0,
-                    transactions: i.total_transactions || 0,
-                    amount: i.total_collected || 0
+                    units: Number(i.total_units || 0),
+                    paid: Number(i.total_paid || 0),
+                    transactions: Number(i.total_transactions || 0),
+                    amount: Number(i.total_collected || 0)
                 })),
-                categories: (data.category_stats || []).map(i => ({
-                    name: i.name || 'UNKNOWN',
-                    units: i.count || 0,
-                    paid: i.total_paid || 0,
-                    transactions: i.total_transactions || 0,
-                    amount: i.potential_revenue || 0
+                categories: (result.category_stats || []).map(i => ({
+                    name: String(i.name || 'OTHER').toUpperCase(),
+                    units: Number(i.count || 0),
+                    paid: Number(i.total_paid || 0),
+                    transactions: Number(i.total_transactions || 0),
+                    amount: Number(i.potential_revenue || 0)
                 }))
             })
         } catch (err) {
@@ -151,11 +161,31 @@ export default function FinanceView() {
         }
     }, [filters.district, filters.tehsil, filters.month])
 
-    // Debounced Summary Fetch
+    // Fetch Retention Cohort Analysis
+    const fetchRetentionReport = useCallback(async () => {
+        try {
+            setRetentionLoading(true)
+            const { data, error } = await supabase.rpc('get_payer_retention_report', {
+                p_cohort_month: 'Oct-2025',
+                p_district: filters.district || null
+            })
+            if (error) throw error
+            setRetentionData(data)
+        } catch (err) {
+            console.error("Retention Report Error:", err)
+        } finally {
+            setRetentionLoading(false)
+        }
+    }, [filters.district])
+
+    // Debounced Summary & Retention Fetch
     useEffect(() => {
-        const timeout = setTimeout(fetchSummaryMetrics, 300)
+        const timeout = setTimeout(() => {
+            fetchSummaryMetrics()
+            fetchRetentionReport()
+        }, 300)
         return () => clearTimeout(timeout)
-    }, [fetchSummaryMetrics])
+    }, [fetchSummaryMetrics, fetchRetentionReport])
 
     const columns = useMemo(() => [
         {
@@ -424,6 +454,34 @@ export default function FinanceView() {
                                 </Button>
                             </div>
 
+                            {/* Retention Stats Insight Layer */}
+                            {retentionData && (
+                                <div className="px-4 py-3 bg-primary/5 border-b border-primary/10 overflow-hidden relative group">
+                                    <div className="absolute top-0 right-0 p-1 opacity-[0.03] group-hover:opacity-10 transition-opacity">
+                                        <TrendingUp size={120} className="-mr-10 -mt-10 rotate-12" />
+                                    </div>
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                                        <div className="flex flex-col max-w-sm">
+                                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                                                <History size={14} />
+                                                Cohort Retention Analysis
+                                            </h3>
+                                            <p className="text-[10px] text-muted-foreground font-black uppercase mt-1.5 leading-relaxed tracking-tight">
+                                                Of the original {(retentionData?.grand_totals?.cohort_size || 0).toLocaleString()} payers from October,
+                                                <span className="text-foreground mx-1">{(retentionData?.grand_totals?.jan_paid_count || 0).toLocaleString()}</span>
+                                                ({retentionData?.grand_totals?.jan_retention || 0}%) remained consistent through January.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-1">
+                                            <RetentionMetric label="Base Group" value="100%" date="OCT-25" count={retentionData?.grand_totals?.cohort_size || 0} color="indigo" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.nov_retention || 0}%`} date="NOV-25" count={retentionData?.grand_totals?.nov_paid_count || 0} color="blue" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.dec_retention || 0}%`} date="DEC-25" count={retentionData?.grand_totals?.dec_paid_count || 0} color="emerald" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.jan_retention || 0}%`} date="JAN-26" count={retentionData?.grand_totals?.jan_paid_count || 0} color="purple" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex-1 overflow-auto no-scrollbar">
                                 <DataTable
                                     columns={columns}
@@ -566,6 +624,28 @@ export default function FinanceView() {
                 </ResizablePanelGroup>
             </div>
         </div >
+    )
+}
+
+function RetentionMetric({ label, value, date, count, color }) {
+    const colors = {
+        indigo: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20',
+        blue: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+        emerald: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+        purple: 'text-purple-500 bg-purple-500/10 border-purple-500/20'
+    }
+
+    return (
+        <div className="flex items-center gap-3 shrink-0">
+            <div className="flex flex-col">
+                <span className="text-[10px] font-black tabular-nums leading-none">{count.toLocaleString()}</span>
+                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{label}</span>
+            </div>
+            <div className={cn("px-2 py-1.5 rounded-lg border flex flex-col items-center justify-center min-w-[50px]", colors[color])}>
+                <span className="text-[9px] font-black uppercase leading-none mb-1 opacity-60">{date}</span>
+                <span className="text-sm font-black tracking-tight leading-none">{value}</span>
+            </div>
+        </div>
     )
 }
 

@@ -35,6 +35,9 @@
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-display: 'Outfit', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+    --heading-size: 1;
+    --subtext-size: 1;
+    --base-size: 1;
 
     /* Extended Gray Tints */
     --gray-50: 0 0% 98%;
@@ -84,8 +87,7 @@
   html,
   body {
     height: 100%;
-    font-size: 14px;
-    /* Increased from default to fix graininess on FHD */
+    font-size: calc(14px * var(--base-size));
   }
 
   body {
@@ -107,6 +109,7 @@
     font-family: var(--font-display) !important;
     letter-spacing: -0.025em;
     font-weight: 800;
+    font-size: calc(1.18rem * var(--heading-size));
   }
 
   .tabular-nums {
@@ -117,7 +120,7 @@
   /* Professional Badge-styled Subtext for High Density Views */
   .badge-subtext {
     @apply inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground/90 border border-border/20 shadow-sm;
-    font-size: 9px;
+    font-size: calc(9px * var(--subtext-size));
     font-weight: 800;
     /* Extra bold for "darker" visual punch */
     line-height: 1;
@@ -226,6 +229,11 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+  }
+
+  /* Professional Column Layout for Settings */
+  .settings-column-container {
+    @apply flex flex-col gap-6 w-full;
   }
 }
 

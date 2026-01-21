@@ -149,6 +149,10 @@ export const ThemeProvider = ({ children }) => {
     const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'antigravity');
     const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'indigo');
     const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'inter');
+    const [headingSize, setHeadingSize] = useState(() => parseFloat(localStorage.getItem('headingSize') || '1'));
+    const [subtextSize, setSubtextSize] = useState(() => parseFloat(localStorage.getItem('subtextSize') || '1'));
+    const [baseSize, setBaseSize] = useState(() => parseFloat(localStorage.getItem('baseSize') || '1'));
+    const [textContrast, setTextContrast] = useState(() => localStorage.getItem('textContrast') || 'charcoal');
 
     // Function to apply typography immediately to CSS variables (Preview Mode)
     const applyFontPreview = useCallback((fontId) => {
@@ -196,10 +200,30 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--font-display', fonts.display);
         root.style.setProperty('--font-mono', fonts.mono);
 
+        // 4. Granular Size Control
+        root.style.setProperty('--heading-size', headingSize);
+        root.style.setProperty('--subtext-size', subtextSize);
+        root.style.setProperty('--base-size', baseSize);
+
+        const contrastModes = {
+            black: { light: '0 0% 0%', dark: '0 0% 100%' },
+            charcoal: { light: '222 15% 12%', dark: '0 0% 98%' },
+            zinc: { light: '240 6% 25%', dark: '240 5% 90%' },
+            slate: { light: '215 25% 27%', dark: '215 20% 90%' },
+            midnight: { light: '222 47% 11%', dark: '217 33% 92%' }
+        };
+
+        const activeContrast = contrastModes[textContrast] || contrastModes.charcoal;
+        root.style.setProperty('--foreground', theme === 'light' ? activeContrast.light : activeContrast.dark);
+
         localStorage.setItem('surfacePalette', surfacePalette);
         localStorage.setItem('accentColor', accentColor);
         localStorage.setItem('fontFamily', fontFamily);
-    }, [theme, surfacePalette, accentColor, fontFamily]);
+        localStorage.setItem('headingSize', headingSize.toString());
+        localStorage.setItem('subtextSize', subtextSize.toString());
+        localStorage.setItem('baseSize', baseSize.toString());
+        localStorage.setItem('textContrast', textContrast);
+    }, [theme, surfacePalette, accentColor, fontFamily, headingSize, subtextSize, baseSize, textContrast]);
 
     return (
         <ThemeContext.Provider value={{
@@ -207,7 +231,11 @@ export const ThemeProvider = ({ children }) => {
             surfacePalette, setSurfacePalette, palettes: SURFACE_PALETTES,
             accentColor, setAccentColor, accents: ACCENT_COLORS,
             fontFamily, setFontFamily, fonts: FONT_PROFILES,
-            applyFontPreview
+            applyFontPreview,
+            headingSize, setHeadingSize,
+            subtextSize, setSubtextSize,
+            baseSize, setBaseSize,
+            textContrast, setTextContrast
         }}>
             {children}
         </ThemeContext.Provider>

@@ -239,7 +239,7 @@ export default function SurveyStatsView() {
                     <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight uppercase truncate leading-none w-full">
                         {filters.uc || filters.tehsil || filters.district || 'Global Operations'}
                     </h1>
-                    <span className="badge-subtext bg-primary/20 text-primary border-primary/30 py-0.5">
+                    <span className={`badge-subtext transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'} bg-primary/20 text-primary border-primary/30 py-0.5`}>
                         {totalCount.toLocaleString()} DATA POINTS
                     </span>
                 </div>
@@ -359,7 +359,7 @@ export default function SurveyStatsView() {
                                 variant="ghost"
                                 size="sm"
                                 className="h-9 px-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0 ml-auto xl:ml-0"
-                                onClick={() => setFilters({ district: 'SARGODHA', tehsil: '', uc: '', surveyor: '', unitType: 'ALL', search: '', masterStatus: 'ALL' })}
+                                onClick={() => setFilters({ district: '', tehsil: '', uc: '', surveyor: '', unitType: 'ALL', search: '', masterStatus: 'ALL' })}
                             >
                                 <span className="text-[10px] font-black uppercase tracking-widest">Reset</span>
                             </Button>
