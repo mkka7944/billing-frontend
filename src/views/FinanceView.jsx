@@ -49,7 +49,7 @@ export default function FinanceView() {
 
     // Summary Data State
     const [summaryData, setSummaryData] = useState({
-        grand_totals: { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0 },
+        grand_totals: { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0, total_transactions: 0 },
         tehsils: [],
         mcucs: [],
         categories: []
@@ -88,10 +88,20 @@ export default function FinanceView() {
             setSummaryLoading(true)
             setSummaryError(null)
 
+            // Normalize month name to "MMM-YYYY" for RPC snapshot logic
+            let snapshotMonth = 'Dec-2025' // Default
+            if (filters.month !== 'ALL') {
+                const [month, year] = filters.month.split(' ')
+                if (month && year) {
+                    snapshotMonth = `${month.substring(0, 3)}-${year}`
+                }
+            }
+
             // Log outgoing params
             const params = {
                 p_district: filters.district || null,
-                p_tehsil: filters.tehsil || null
+                p_tehsil: filters.tehsil || null,
+                p_bill_month: snapshotMonth
             }
             console.log("Fetching Summary with Params:", params)
 
@@ -110,20 +120,26 @@ export default function FinanceView() {
 
             console.log("Finance Metrics Data Received:", data)
             setSummaryData({
-                grand_totals: data.grand_totals || { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0 },
+                grand_totals: data.grand_totals || { total_revenue: 0, total_bills_paid: 0, total_demand: 0, total_units: 0, total_transactions: 0 },
                 tehsils: (data.tehsil_stats || []).map(i => ({
                     name: i.name || 'UNKNOWN',
-                    bills: i.total_units || 0,
+                    units: i.total_units || 0,
+                    paid: i.total_paid || 0,
+                    transactions: i.total_transactions || 0,
                     amount: i.total_collected || 0
                 })),
                 mcucs: (data.uc_stats || []).map(i => ({
                     name: i.name || 'UNKNOWN',
-                    bills: i.total_units || 0,
+                    units: i.total_units || 0,
+                    paid: i.total_paid || 0,
+                    transactions: i.total_transactions || 0,
                     amount: i.total_collected || 0
                 })),
                 categories: (data.category_stats || []).map(i => ({
                     name: i.name || 'UNKNOWN',
-                    bills: i.count || 0,
+                    units: i.count || 0,
+                    paid: i.total_paid || 0,
+                    transactions: i.total_transactions || 0,
                     amount: i.potential_revenue || 0
                 }))
             })
@@ -133,7 +149,7 @@ export default function FinanceView() {
         } finally {
             setSummaryLoading(false)
         }
-    }, [filters.district, filters.tehsil])
+    }, [filters.district, filters.tehsil, filters.month])
 
     // Debounced Summary Fetch
     useEffect(() => {
@@ -308,6 +324,12 @@ export default function FinanceView() {
                                                         {summaryData.grand_totals.total_units.toLocaleString()}
                                                     </span>
                                                 </div>
+                                                <div className="p-2 rounded-lg bg-background border border-border/50">
+                                                    <span className="text-[8px] font-black text-muted-foreground uppercase block mb-1">Receipt Count</span>
+                                                    <span className="text-sm font-black tabular-nums text-amber-500">
+                                                        {summaryData.grand_totals.total_transactions.toLocaleString()}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </>
                                     )}
@@ -337,7 +359,7 @@ export default function FinanceView() {
                                         onToggle={() => toggleSection('category')}
                                         items={summaryData.categories}
                                         color="purple"
-                                        label="Demand" // Optional custom label if we want to distinguish from 'Collected'
+                                        label="Potential"
                                     />
                                 </div>
                             </ScrollArea>
@@ -542,7 +564,7 @@ export default function FinanceView() {
     )
 }
 
-function SummaryCollapsible({ title, isOpen, onToggle, items, color = "blue" }) {
+function SummaryCollapsible({ title, isOpen, onToggle, items, color = "blue", label }) {
     return (
         <div className="rounded-xl border border-border/50 bg-background/50 overflow-hidden transition-all">
             <button
@@ -560,16 +582,26 @@ function SummaryCollapsible({ title, isOpen, onToggle, items, color = "blue" }) 
                 <div className="p-1 space-y-1">
                     {items.map((item, i) => (
                         <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-card/40 border border-transparent hover:border-border/60 hover:bg-card transition-all group">
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-bold group-hover:text-primary transition-colors">{item.name}</span>
-                                <span className="text-[8px] font-black text-muted-foreground uppercase">{item.bills} BILLS</span>
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-bold group-hover:text-primary transition-colors leading-none">{item.name}</span>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <span className="text-[8px] font-black text-emerald-500/80 uppercase tracking-tighter">{item.paid} PAID</span>
+                                    {item.transactions > item.paid && (
+                                        <span className="text-[8px] font-black text-amber-500/80 uppercase tracking-tighter">({item.transactions} RC)</span>
+                                    )}
+                                    <span className="text-[8px] text-muted-foreground opacity-30">/</span>
+                                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter">{item.units} {label === 'Potential' ? 'UNITS' : 'BILLS'}</span>
+                                </div>
                             </div>
-                            <span className={cn(
-                                "text-xs font-black tabular-nums",
-                                color === 'blue' ? "text-blue-500" : "text-purple-500"
-                            )}>
-                                <CurrencyText amount={item.amount} />
-                            </span>
+                            <div className="flex flex-col items-end text-right">
+                                <span className={cn(
+                                    "text-xs font-black tabular-nums",
+                                    color === 'blue' ? "text-blue-500" : "text-purple-500"
+                                )}>
+                                    <CurrencyText amount={item.amount} />
+                                </span>
+                                <span className="text-[8px] font-black text-muted-foreground uppercase opacity-40 leading-none mt-1">{label || 'COLLECTED'}</span>
+                            </div>
                         </div>
                     ))}
                 </div>
