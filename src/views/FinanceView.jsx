@@ -166,7 +166,7 @@ export default function FinanceView() {
         try {
             setRetentionLoading(true)
             const { data, error } = await supabase.rpc('get_payer_retention_report', {
-                p_cohort_month: 'Oct-2025',
+                p_cohort_month: filters.month === 'ALL' ? 'NOV2025' : filters.month,
                 p_district: filters.district || null
             })
             if (error) throw error
@@ -176,7 +176,7 @@ export default function FinanceView() {
         } finally {
             setRetentionLoading(false)
         }
-    }, [filters.district])
+    }, [filters.district, filters.month])
 
     // Debounced Summary & Retention Fetch
     useEffect(() => {
@@ -467,16 +467,16 @@ export default function FinanceView() {
                                                 Cohort Retention Analysis
                                             </h3>
                                             <p className="text-[10px] text-muted-foreground font-black uppercase mt-1.5 leading-relaxed tracking-tight">
-                                                Of the original {(retentionData?.grand_totals?.cohort_size || 0).toLocaleString()} payers from October,
-                                                <span className="text-foreground mx-1">{(retentionData?.grand_totals?.jan_paid_count || 0).toLocaleString()}</span>
-                                                ({retentionData?.grand_totals?.jan_retention || 0}%) remained consistent through January.
+                                                Of the original {(retentionData?.grand_totals?.cohort_size || 0).toLocaleString()} payers from {retentionData?.meta?.m0_label || 'Base'},
+                                                <span className="text-foreground mx-1">{(retentionData?.grand_totals?.m2_paid_count || 0).toLocaleString()}</span>
+                                                ({retentionData?.grand_totals?.m2_retention || 0}%) remained consistent through {retentionData?.meta?.m2_label || 'Target'}.
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-6 overflow-x-auto no-scrollbar py-1">
-                                            <RetentionMetric label="Base Group" value="100%" date="OCT-25" count={retentionData?.grand_totals?.cohort_size || 0} color="indigo" />
-                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.nov_retention || 0}%`} date="NOV-25" count={retentionData?.grand_totals?.nov_paid_count || 0} color="blue" />
-                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.dec_retention || 0}%`} date="DEC-25" count={retentionData?.grand_totals?.dec_paid_count || 0} color="emerald" />
-                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.jan_retention || 0}%`} date="JAN-26" count={retentionData?.grand_totals?.jan_paid_count || 0} color="purple" />
+                                            <RetentionMetric label="Base Group" value="100%" date={retentionData?.meta?.m0_label} count={retentionData?.grand_totals?.cohort_size || 0} color="indigo" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.m1_retention || 0}%`} date={retentionData?.meta?.m1_label} count={retentionData?.grand_totals?.m1_paid_count || 0} color="blue" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.m2_retention || 0}%`} date={retentionData?.meta?.m2_label} count={retentionData?.grand_totals?.m2_paid_count || 0} color="emerald" />
+                                            <RetentionMetric label="Retained" value={`${retentionData?.grand_totals?.m3_retention || 0}%`} date={retentionData?.meta?.m3_label} count={retentionData?.grand_totals?.m3_paid_count || 0} color="purple" />
                                         </div>
                                     </div>
                                 </div>
