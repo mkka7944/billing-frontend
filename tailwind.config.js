@@ -59,7 +59,9 @@ export default {
                 }
             },
             fontFamily: {
-                sans: ['Inter', 'sans-serif', 'system-ui'],
+                sans: ['var(--font-sans)', 'Inter', 'sans-serif', 'system-ui'],
+                display: ['var(--font-display)', 'Outfit', 'sans-serif'],
+                mono: ['var(--font-mono)', 'monospace'],
             }
         }
     },

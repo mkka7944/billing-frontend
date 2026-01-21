@@ -106,8 +106,8 @@ export default function SurveyStatsView() {
                         <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
                             {record.consumer_name || 'Anonymous'}
                         </span>
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium opacity-70">
-                            <MapPin size={10} className="text-primary/50" />
+                        <span className="badge-subtext bg-muted text-foreground/70 border-border/40 mt-1">
+                            <MapPin size={8} className="text-primary mr-1" />
                             {shortenAreaName(record.uc_name, record.city_district, record.tehsil)}
                         </span>
                     </div>
@@ -119,9 +119,9 @@ export default function SurveyStatsView() {
             header: "Status",
             cell: ({ row }) => {
                 const record = row.original
-                if (record.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 whitespace-nowrap">Archived</Badge>
-                if (record.is_biller) return <Badge variant="secondary" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-none hover:bg-emerald-500/15 whitespace-nowrap">Active</Badge>
-                return <Badge variant="outline" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-5 text-amber-600 border-amber-500/50 bg-amber-500/10 whitespace-nowrap">New Survey</Badge>
+                if (record.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 whitespace-nowrap bg-rose-500/20 text-rose-600 border-rose-500/30">Archived</Badge>
+                if (record.is_biller) return <Badge variant="secondary" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 bg-emerald-500/20 text-emerald-600 border-emerald-500/30 shadow-none hover:bg-emerald-500/25 whitespace-nowrap">Active</Badge>
+                return <Badge variant="outline" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 text-amber-600 border-amber-500/40 bg-amber-500/20 whitespace-nowrap">New Survey</Badge>
             },
         },
         {
@@ -130,8 +130,8 @@ export default function SurveyStatsView() {
             cell: ({ row }) => (
                 <div className="flex flex-col items-center">
                     <CurrencyText amount={row.original.total_paid} />
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter opacity-70">
-                        of <CurrencyText amount={row.original.total_due} />
+                    <span className="badge-subtext mt-1 bg-transparent border-none p-0 opacity-60">
+                        OF <CurrencyText amount={row.original.total_due} />
                     </span>
                 </div>
             ),
@@ -144,7 +144,7 @@ export default function SurveyStatsView() {
                     {row.original.history.map((h, hi) => (
                         <div key={hi} className="flex flex-col items-center gap-1.5 min-w-[18px]">
                             <div className={`w-2 h-2 rounded-full transition-all ring-2 ring-offset-2 ring-transparent ${h.paid === null ? 'bg-muted ring-muted/20' : h.paid ? 'bg-emerald-500 shadow-emerald-500/20 shadow-sm' : 'bg-rose-500 shadow-rose-500/20 shadow-sm'}`} title={h.month} />
-                            <span className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-tight leading-none">
+                            <span className="badge-subtext bg-transparent border-none p-0 opacity-40 leading-none">
                                 {h.month.substring(0, 3)}
                             </span>
                         </div>
@@ -239,9 +239,9 @@ export default function SurveyStatsView() {
                     <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight uppercase truncate leading-none w-full">
                         {filters.uc || filters.tehsil || filters.district || 'Global Operations'}
                     </h1>
-                    <Badge variant="outline" className="text-[10px] py-0 h-5 border-primary/20 text-primary bg-primary/5 tabular-nums whitespace-nowrap">
+                    <span className="badge-subtext bg-primary/20 text-primary border-primary/30 py-0.5">
                         {totalCount.toLocaleString()} DATA POINTS
-                    </Badge>
+                    </span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">

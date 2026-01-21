@@ -305,30 +305,35 @@ export default function FinanceView() {
                                         <>
                                             <div className="p-2 rounded-lg bg-background border border-border/50 relative overflow-hidden">
                                                 {summaryLoading && <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] z-10 animate-pulse" />}
-                                                <span className="text-[8px] font-black text-muted-foreground uppercase block mb-1">Total Potential (Demand)</span>
-                                                <span className="text-sm font-black tabular-nums text-primary">
-                                                    <CurrencyText amount={summaryData.grand_totals.total_demand} />
-                                                </span>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">Total Potential (Demand)</span>
+                                                    <span className="text-3xl md:text-4xl font-black tabular-nums tracking-tighter text-purple-500 font-mono">
+                                                        <CurrencyText amount={summaryData.grand_totals.total_demand} />
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 relative overflow-hidden">
+
+                                            <div className="grid grid-cols-2 gap-2 mt-4 relative overflow-hidden">
                                                 {summaryLoading && <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] z-10 animate-pulse" />}
-                                                <div className="p-2 rounded-lg bg-background border border-border/50">
-                                                    <span className="text-[8px] font-black text-muted-foreground uppercase block mb-1">Total Recovery</span>
-                                                    <span className="text-sm font-black tabular-nums text-emerald-500">
+                                                <div className="p-3 rounded-xl bg-background border border-border/50 shadow-sm">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Total Recovery</span>
+                                                    <span className="text-xl font-black tabular-nums text-emerald-500 font-mono">
                                                         <CurrencyText amount={summaryData.grand_totals.total_revenue} />
                                                     </span>
                                                 </div>
-                                                <div className="p-2 rounded-lg bg-background border border-border/50">
-                                                    <span className="text-[8px] font-black text-muted-foreground uppercase block mb-1">Total Records</span>
-                                                    <span className="text-sm font-black tabular-nums text-blue-500">
-                                                        {summaryData.grand_totals.total_units.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                                <div className="p-2 rounded-lg bg-background border border-border/50">
-                                                    <span className="text-[8px] font-black text-muted-foreground uppercase block mb-1">Receipt Count</span>
-                                                    <span className="text-sm font-black tabular-nums text-amber-500">
-                                                        {summaryData.grand_totals.total_transactions.toLocaleString()}
-                                                    </span>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="p-3 rounded-xl bg-background border border-border/50 shadow-sm">
+                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Units</span>
+                                                        <span className="text-sm font-black tabular-nums text-blue-500">
+                                                            {summaryData.grand_totals.total_units.toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                    <div className="p-3 rounded-xl bg-background border border-border/50 shadow-sm">
+                                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Receipts</span>
+                                                        <span className="text-sm font-black tabular-nums text-amber-500">
+                                                            {summaryData.grand_totals.total_transactions.toLocaleString()}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </>
@@ -569,10 +574,16 @@ function SummaryCollapsible({ title, isOpen, onToggle, items, color = "blue", la
         <div className="rounded-xl border border-border/50 bg-background/50 overflow-hidden transition-all">
             <button
                 onClick={onToggle}
-                className="w-full p-2.5 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/30 transition-colors"
             >
-                <span className="text-[10px] font-black uppercase tracking-wider text-foreground/80">{title}</span>
-                {isOpen ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "w-1.5 h-6 rounded-full transition-colors",
+                        color === 'blue' ? "bg-blue-500" : "bg-purple-500"
+                    )} />
+                    <span className="text-[12px] font-black uppercase tracking-widest text-foreground/90">{title}</span>
+                </div>
+                {isOpen ? <ChevronUp size={14} className="text-muted-foreground/60" /> : <ChevronDown size={14} className="text-muted-foreground/60" />}
             </button>
 
             <div className={cn(
@@ -581,26 +592,25 @@ function SummaryCollapsible({ title, isOpen, onToggle, items, color = "blue", la
             )}>
                 <div className="p-1 space-y-1">
                     {items.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-card/40 border border-transparent hover:border-border/60 hover:bg-card transition-all group">
+                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-card/40 border border-border/10 hover:border-border/60 hover:bg-card/80 transition-all group">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-[10px] font-bold group-hover:text-primary transition-colors leading-none">{item.name}</span>
-                                <div className="flex items-center gap-1.5 mt-1">
-                                    <span className="text-[8px] font-black text-emerald-500/80 uppercase tracking-tighter">{item.paid} PAID</span>
+                                <span className="text-[11px] font-bold group-hover:text-primary transition-colors leading-tight">{item.name}</span>
+                                <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                                    <span className="badge-subtext bg-emerald-500/20 text-emerald-600 border-emerald-500/30">{item.paid} Paid</span>
                                     {item.transactions > item.paid && (
-                                        <span className="text-[8px] font-black text-amber-500/80 uppercase tracking-tighter">({item.transactions} RC)</span>
+                                        <span className="badge-subtext bg-amber-500/20 text-amber-600 border-amber-500/30">({item.transactions} RC)</span>
                                     )}
-                                    <span className="text-[8px] text-muted-foreground opacity-30">/</span>
-                                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-tighter">{item.units} {label === 'Potential' ? 'UNITS' : 'BILLS'}</span>
+                                    <span className="badge-subtext">{item.units} {label === 'Potential' ? 'Units' : 'Bills'}</span>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end text-right">
                                 <span className={cn(
-                                    "text-xs font-black tabular-nums",
+                                    "text-[13px] font-bold tabular-nums tracking-tighter",
                                     color === 'blue' ? "text-blue-500" : "text-purple-500"
                                 )}>
                                     <CurrencyText amount={item.amount} />
                                 </span>
-                                <span className="text-[8px] font-black text-muted-foreground uppercase opacity-40 leading-none mt-1">{label || 'COLLECTED'}</span>
+                                <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest leading-none mt-1">{label || 'COLLECTED'}</span>
                             </div>
                         </div>
                     ))}

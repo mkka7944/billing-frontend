@@ -114,10 +114,50 @@ const ACCENT_COLORS = {
     }
 };
 
+/**
+ * FONT_PROFILES: Curated typography stacks.
+ */
+const FONT_PROFILES = {
+    inter: {
+        name: 'Modern Sans (Inter)',
+        sans: '"Inter", sans-serif',
+        display: '"Inter", sans-serif', // Changed to match sans for uniformity
+        mono: '"JetBrains Mono", monospace'
+    },
+    geist: {
+        name: 'Geist Technical',
+        sans: '"Geist", sans-serif',
+        display: '"Geist", sans-serif',
+        mono: '"Geist", monospace'
+    },
+    outfit: {
+        name: 'Geometric Pro (Outfit)',
+        sans: '"Outfit", sans-serif',
+        display: '"Outfit", sans-serif',
+        mono: '"JetBrains Mono", monospace'
+    },
+    mono: {
+        name: 'Data Focus (Mono)',
+        sans: '"JetBrains Mono", monospace',
+        display: '"JetBrains Mono", monospace', // Changed to force all-mono look
+        mono: '"JetBrains Mono", monospace'
+    }
+};
+
 export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
     const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'antigravity');
     const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'indigo');
+    const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'inter');
+
+    // Function to apply typography immediately to CSS variables (Preview Mode)
+    const applyFontPreview = useCallback((fontId) => {
+        const root = window.document.documentElement;
+        const fonts = FONT_PROFILES[fontId] || FONT_PROFILES.inter;
+        root.style.setProperty('--font-sans', fonts.sans);
+        root.style.setProperty('--font-display', fonts.display);
+        root.style.setProperty('--font-mono', fonts.mono);
+    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -150,15 +190,24 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--ring', aSet.primary);
         root.style.setProperty('--primary-foreground', aSet.foreground);
 
+        // 3. Typography Variables
+        const fonts = FONT_PROFILES[fontFamily] || FONT_PROFILES.inter;
+        root.style.setProperty('--font-sans', fonts.sans);
+        root.style.setProperty('--font-display', fonts.display);
+        root.style.setProperty('--font-mono', fonts.mono);
+
         localStorage.setItem('surfacePalette', surfacePalette);
         localStorage.setItem('accentColor', accentColor);
-    }, [theme, surfacePalette, accentColor]);
+        localStorage.setItem('fontFamily', fontFamily);
+    }, [theme, surfacePalette, accentColor, fontFamily]);
 
     return (
         <ThemeContext.Provider value={{
             theme, toggleTheme: () => setTheme(v => v === 'light' ? 'dark' : 'light'), setTargetTheme: setTheme,
             surfacePalette, setSurfacePalette, palettes: SURFACE_PALETTES,
-            accentColor, setAccentColor, accents: ACCENT_COLORS
+            accentColor, setAccentColor, accents: ACCENT_COLORS,
+            fontFamily, setFontFamily, fonts: FONT_PROFILES,
+            applyFontPreview
         }}>
             {children}
         </ThemeContext.Provider>

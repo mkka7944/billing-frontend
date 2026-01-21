@@ -3,23 +3,26 @@ import { useTheme } from '../context/ThemeContext'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { Check, Moon, Sun, Palette, Layout, MousePointer2, ChevronDown, ChevronUp, Lock, AlertCircle } from 'lucide-react'
+import { Check, Moon, Sun, Palette, Layout, MousePointer2, ChevronDown, ChevronUp, Lock, AlertCircle, Type } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function SettingsView() {
     const {
         theme, setTargetTheme,
         surfacePalette, setSurfacePalette, palettes,
-        accentColor, setAccentColor, accents
+        accentColor, setAccentColor, accents,
+        fontFamily, setFontFamily, fonts, applyFontPreview
     } = useTheme()
 
     const { isAdmin, permissions } = useAuth()
+    const [tempFont, setTempFont] = useState(fontFamily)
 
     // State for collapsible sections
     const [openSections, setOpenSections] = useState({
         appearance: true,
         surface: true,
-        accent: true
+        accent: true,
+        typography: true
     })
 
     const toggleSection = (section) => {
@@ -171,7 +174,65 @@ export default function SettingsView() {
                     )}
                 </Card>
 
-                {/* 4. User Access Control (Admin Only) */}
+                {/* 4. Typography Profile Section */}
+                <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300">
+                    <button
+                        onClick={() => toggleSection('typography')}
+                        className="w-full text-left focus:outline-none group px-3 py-2 border-b border-border/10 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Type size={14} className="text-primary" />
+                            <span className="text-[10px] font-black uppercase tracking-tight">Typography Architecture</span>
+                        </div>
+                        {openSections.typography ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                    </button>
+                    {openSections.typography && (
+                        <CardContent className="p-2 animate-in slide-in-from-top-4 duration-500">
+                            <div className="grid grid-cols-1 gap-1.5 mb-2">
+                                {Object.entries(fonts).map(([id, font]) => {
+                                    const isDraft = tempFont === id
+                                    const isSaved = fontFamily === id
+
+                                    return (
+                                        <button
+                                            key={id}
+                                            onClick={() => {
+                                                setTempFont(id)
+                                                applyFontPreview(id)
+                                            }}
+                                            className={cn(
+                                                "group relative flex flex-col p-2.5 rounded-lg border border-border bg-card/50 hover:bg-card transition-all duration-200 text-left",
+                                                isDraft && "ring-1 ring-primary border-primary bg-card/80"
+                                            )}
+                                        >
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-tight truncate group-hover:text-primary transition-colors">{font.name}</span>
+                                                    {isSaved && <span className="text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-black uppercase">Active</span>}
+                                                </div>
+                                                {isDraft && <Check size={8} className="text-primary" strokeWidth={4} />}
+                                            </div>
+                                            <p className="text-[11px] opacity-70 truncate font-semibold" style={{ fontFamily: font.sans }}>
+                                                Smooth rendering test: The quick brown fox jumps...
+                                            </p>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+
+                            {tempFont !== fontFamily && (
+                                <Button
+                                    onClick={() => setFontFamily(tempFont)}
+                                    className="w-full h-8 text-[9px] font-black uppercase tracking-widest animate-in fade-in zoom-in duration-300 shadow-lg shadow-primary/20"
+                                >
+                                    Apply Configuration
+                                </Button>
+                            )}
+                        </CardContent>
+                    )}
+                </Card>
+
+                {/* 5. User Access Control (Admin Only) */}
                 {isAdmin && (
                     <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300 w-full lg:col-span-1">
                         <button

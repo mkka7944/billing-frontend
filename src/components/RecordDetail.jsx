@@ -148,14 +148,13 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                             {surveyId}
                         </h2>
                         <div className="h-8 w-px bg-border/50" />
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground leading-none mb-1">
+                        <div className="flex flex-col gap-0.5">
+                            <span className="badge-subtext text-primary border-primary/30 bg-primary/10">
                                 {data?.surveyor_name || 'System Auto'}
                             </span>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground tabular-nums">
-                                <span>{data?.survey_date || 'N/A'}</span>
-                                <span className="opacity-30">•</span>
-                                <span>{data?.survey_time || '--:--'}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="badge-subtext font-mono tracking-normal text-foreground/80">{data?.survey_date || 'N/A'}</span>
+                                <span className="badge-subtext font-mono tracking-normal text-foreground/80">{data?.survey_time || '--:--'}</span>
                             </div>
                         </div>
                     </div>
@@ -250,12 +249,14 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                                     {/* Info Overlay */}
                                     <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white pointer-events-none">
                                         <div>
-                                            <div className="text-[9px] font-black uppercase tracking-wider opacity-80 mb-1">
+                                            <div className="badge-subtext bg-black/60 text-white border-white/20 mb-1">
                                                 Image {activeImage + 1} of {data.image_urls.length}
                                             </div>
-                                            <div className="flex items-center gap-2 text-[11px] font-bold">
-                                                <MapPin size={10} className="text-primary" />
-                                                {shortenAreaName(data.uc_name, data.city_district, data.tehsil)}
+                                            <div className="flex items-center gap-2">
+                                                <span className="badge-subtext bg-primary/90 text-white border-none font-bold">
+                                                    <MapPin size={8} className="mr-1 inline" />
+                                                    {shortenAreaName(data.uc_name, data.city_district, data.tehsil)}
+                                                </span>
                                             </div>
                                         </div>
                                         <Button
@@ -280,11 +281,11 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                         <Card className="shadow-none border-border/60 bg-card/50">
                             <CardContent className="p-3 flex items-center justify-between">
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Identity</p>
+                                    <p className="badge-subtext mb-1">Identity Profile</p>
                                     <h3 className="text-base font-bold leading-tight truncate pr-4">{data.consumer_name || 'Anonymous'}</h3>
-                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                                         {getConsumerTypeBadge()}
-                                        <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{data.address || 'No Verified Address'}</p>
+                                        <span className="badge-subtext normal-case tracking-normal font-medium bg-transparent border-none text-muted-foreground/80 lowercase italic">{data.address || 'No Verified Address'}</span>
                                     </div>
                                 </div>
                                 <div className="text-right shrink-0">
@@ -296,15 +297,15 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                         {/* Financial Stats - Super Compact */}
                         <div className="grid grid-cols-3 gap-2">
                             <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
-                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Due</p>
+                                <p className="badge-subtext mb-1 opacity-60">Demand</p>
                                 <p className="text-xs font-bold text-foreground tabular-nums"><CurrencyText amount={financials.outstanding} /></p>
                             </div>
                             <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
-                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Paid</p>
+                                <p className="badge-subtext mb-1 opacity-60">Paid</p>
                                 <p className="text-xs font-bold text-emerald-600 tabular-nums"><CurrencyText amount={financials.totalPaid} /></p>
                             </div>
                             <div className="p-2.5 rounded-xl border border-border/40 bg-card/30">
-                                <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Rate</p>
+                                <p className="badge-subtext mb-1 opacity-60">Recovery</p>
                                 <p className="text-xs font-bold text-indigo-600 tabular-nums">{financials.recoveryRate.toFixed(0)}%</p>
                             </div>
                         </div>
@@ -325,7 +326,7 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                                             </div>
                                             <div>
                                                 <p className="text-[11px] font-bold uppercase leading-none">{bill.bill_month}</p>
-                                                <p className="text-[9px] text-muted-foreground font-mono mt-0.5">#{bill.psid}</p>
+                                                <span className="badge-subtext font-mono tracking-normal bg-transparent border-none p-0 mt-0.5 opacity-50">#{bill.psid}</span>
                                             </div>
                                         </div>
                                         <div className="text-right">
