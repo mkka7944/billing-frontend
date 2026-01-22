@@ -145,14 +145,14 @@ const FONT_PROFILES = {
 };
 
 export const ThemeProvider = ({ children }) => {
-    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-    const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'antigravity');
-    const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'indigo');
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+    const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'github');
+    const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'slate_grey');
     const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'inter');
     const [headingSize, setHeadingSize] = useState(() => parseFloat(localStorage.getItem('headingSize') || '1'));
     const [subtextSize, setSubtextSize] = useState(() => parseFloat(localStorage.getItem('subtextSize') || '1'));
     const [baseSize, setBaseSize] = useState(() => parseFloat(localStorage.getItem('baseSize') || '1'));
-    const [textContrast, setTextContrast] = useState(() => localStorage.getItem('textContrast') || 'charcoal');
+    const [textContrast, setTextContrast] = useState(() => localStorage.getItem('textContrast') || 'zinc');
 
     // Function to apply typography immediately to CSS variables (Preview Mode)
     const applyFontPreview = useCallback((fontId) => {
@@ -207,14 +207,14 @@ export const ThemeProvider = ({ children }) => {
 
         const contrastModes = {
             black: { light: '0 0% 0%', dark: '0 0% 100%' },
-            charcoal: { light: '222 15% 12%', dark: '0 0% 98%' },
-            zinc: { light: '240 6% 25%', dark: '240 5% 90%' },
-            slate: { light: '215 25% 27%', dark: '215 20% 90%' },
-            midnight: { light: '222 47% 11%', dark: '217 33% 92%' }
+            charcoal: { light: '222 15% 15%', dark: '0 0% 90%' },
+            zinc: { light: '240 6% 30%', dark: '240 5% 82%' }, // More noticeable "Lighter" gray
+            slate: { light: '215 25% 40%', dark: '215 20% 75%' },
+            midnight: { light: '222 47% 20%', dark: '217 33% 65%' } // Deeply dimmed
         };
 
-        const activeContrast = contrastModes[textContrast] || contrastModes.charcoal;
-        root.style.setProperty('--foreground', theme === 'light' ? activeContrast.light : activeContrast.dark);
+        const activeContrast = contrastModes[textContrast] || contrastModes.zinc;
+        root.style.setProperty('--foreground', theme === 'dark' ? activeContrast.dark : activeContrast.light);
 
         localStorage.setItem('surfacePalette', surfacePalette);
         localStorage.setItem('accentColor', accentColor);

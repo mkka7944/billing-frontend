@@ -29,6 +29,7 @@ export default function SettingsView() {
         surface: false,
         accent: false,
         typography: false,
+        contrast: false,
         controls: false,
         permissions: false,
         lab: false
@@ -266,7 +267,46 @@ export default function SettingsView() {
                     )}
                 </Card>
 
-                {/* 5. Granular Sizing */}
+                {/* 5. Contrast Architecture (Text Point-Colors) */}
+                <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300">
+                    <button
+                        onClick={(e) => toggleSection('contrast', e)}
+                        className="w-full text-left focus:outline-none group px-4 py-3 border-b border-border/10 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Palette size={14} className="text-primary" />
+                            <span className="text-[11px] font-black uppercase tracking-tight">Contrast Profile</span>
+                        </div>
+                        {openSections.contrast ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                    </button>
+                    {openSections.contrast && (
+                        <CardContent className="p-4 animate-in slide-in-from-top-4 duration-500">
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                {[
+                                    { id: 'black', name: 'Ink Black', class: 'bg-black text-white' },
+                                    { id: 'charcoal', name: 'Charcoal', class: 'bg-zinc-800 text-zinc-100' },
+                                    { id: 'zinc', name: 'Lead Zinc', class: 'bg-zinc-600 text-zinc-50' },
+                                    { id: 'slate', name: 'Dimmed Slate', class: 'bg-slate-500 text-slate-50' },
+                                    { id: 'midnight', name: 'Midnight', class: 'bg-blue-950 text-blue-50' }
+                                ].map((profile) => (
+                                    <button
+                                        key={profile.id}
+                                        onClick={() => setTextContrast(profile.id)}
+                                        className={cn(
+                                            "flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-card/50 hover:bg-card transition-all duration-200",
+                                            textContrast === profile.id && "ring-1 ring-primary border-primary bg-card"
+                                        )}
+                                    >
+                                        <div className={cn("w-6 h-6 rounded-lg border border-white/10", profile.class)} />
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-center truncate w-full">{profile.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
+
+                {/* 6. Granular Sizing */}
                 <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 backdrop-blur-md rounded-xl transition-all duration-300">
                     <button
                         onClick={(e) => toggleSection('controls', e)}
