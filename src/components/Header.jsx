@@ -65,13 +65,12 @@ export default function Header({ onMenuClick }) {
                 <div className="h-4 w-px bg-border/40 mx-1"></div>
 
                 <div className="flex items-center gap-3 pl-2">
-                    <div className="text-right hidden sm:block">
-                        <div className="text-[11px] font-black text-foreground uppercase tracking-tight">
-                            {profile?.full_name || 'System User'}
+                    <div className="text-right hidden sm:block select-none">
+                        <div className="text-[11px] font-black text-foreground uppercase tracking-tight truncate max-w-[140px]">
+                            {(profile?.full_name?.toUpperCase()?.trim() === 'SYSTEM ADMINISTRATOR') ? 'Terminal Main' : (profile?.full_name || 'Terminal')}
                         </div>
-                        <div className="text-[9px] text-emerald-500 font-black uppercase tracking-widest mt-0.5 group flex items-center gap-1">
-                            <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div>
-                            {isAdmin ? 'System Admin' : 'Field Operator'}
+                        <div className="text-[7.5px] text-emerald-500/80 font-black uppercase tracking-[0.2em] mt-0.5 flex items-center justify-end gap-1.5">
+                            {isAdmin ? 'Root Node' : 'Active'}
                         </div>
                     </div>
                     <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-primary shadow-sm hover:border-primary/40 transition-all">

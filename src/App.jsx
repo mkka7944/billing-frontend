@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { HashRouter as Router, Routes, Route } from 'react-router-dom'
 import { SearchProvider } from './context/SearchContext'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import { UIProvider, useUI } from './context/UIContext'

@@ -101,8 +101,27 @@ export function AuthProvider({ children }) {
     }
 
     const logout = async () => {
-        const { error } = await supabase.auth.signOut()
-        if (error) throw error
+        try {
+            // 1. Sign out from Supabase
+            await supabase.auth.signOut()
+
+            // 2. Clear local storage to prevent automatic re-login on refresh
+            localStorage.clear()
+            sessionStorage.clear()
+
+            // 3. Clear local state
+            setUser(null)
+            setProfile(null)
+            setPermissions(null)
+
+            // 4. Force hard redirect to entry point to clear any lingering JS closures
+            window.location.href = '/'
+        } catch (error) {
+            console.error('Logout error:', error)
+            // Still clear state locally
+            setUser(null)
+            window.location.href = '/'
+        }
     }
 
     return (

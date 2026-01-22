@@ -179,16 +179,27 @@ export default function Sidebar() {
                             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 border-2 rounded-full bg-emerald-500 border-card"></div>
                         </div>
                         {!isSidebarCollapsed && (
-                            <div className="overflow-hidden">
-                                <div className="text-[12px] font-black truncate text-foreground uppercase tracking-tight">{profile?.full_name || 'System User'}</div>
-                                <div className="text-[9px] font-bold truncate text-muted-foreground uppercase tracking-wider">{isAdmin ? 'System Admin' : 'Field Operator'}</div>
+                            <div className="overflow-hidden min-w-0 flex-1 ml-1 select-none">
+                                <div className="text-[11px] font-black truncate text-foreground uppercase tracking-tight">
+                                    {(profile?.full_name?.toUpperCase()?.trim() === 'SYSTEM ADMINISTRATOR') ? 'Access Control' : (profile?.full_name || 'Terminal')}
+                                </div>
+                                <div className="text-[8px] font-bold truncate text-muted-foreground/60 uppercase tracking-[0.15em] mt-0.5 flex items-center gap-1.5 translate-y-[-1px]">
+                                    <span className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]"></span>
+                                    {isAdmin ? 'Root (Master)' : 'Operator'}
+                                </div>
                             </div>
                         )}
                     </div>
                     {!isSidebarCollapsed && (
                         <button
-                            onClick={logout}
-                            className="p-2 rounded-lg transition-all shrink-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10"
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                logout();
+                            }}
+                            className="p-2 rounded-lg transition-all shrink-0 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 relative z-[99] cursor-pointer"
+                            title="Sign Out"
                         >
                             <LogOut size={16} />
                         </button>
