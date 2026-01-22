@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useUI } from '../context/UIContext'
 import { shortenAreaName, formatLocationLabel } from '../lib/utils'
-import { CurrencyText } from '../components/common/UIComponents'
+import { CurrencyText, StatusBadge } from '../components/common/UIComponents'
 import { useLocationHierarchy } from '../lib/locationHooks'
 import { DataTable } from '../components/common/DataTable'
 import RecordDetail from '../components/RecordDetail'
@@ -221,8 +221,8 @@ export default function FinanceView() {
             header: "Status",
             cell: ({ row }) => {
                 const record = row.original
-                if (record.is_biller) return <Badge variant="secondary" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-none">Active</Badge>
-                return <Badge variant="outline" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4 text-amber-600 border-amber-500/50 bg-amber-500/10">Pending</Badge>
+                if (record.is_biller) return <StatusBadge status="Active" variant="active" />
+                return <StatusBadge status="Pending" variant="pending" />
             }
         }
     ], [])

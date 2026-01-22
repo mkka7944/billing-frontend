@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useUI } from '../context/UIContext'
 import { shortenAreaName, formatLocationLabel } from '../lib/utils'
-import { CurrencyText } from '../components/common/UIComponents'
+import { CurrencyText, StatusBadge } from '../components/common/UIComponents'
 import { useLocationHierarchy } from '../lib/locationHooks'
 import { DataTable } from '../components/common/DataTable'
 import RecordDetail from '../components/RecordDetail'
@@ -77,9 +77,9 @@ export default function SurveyStatsView() {
 
                 let badge = null
                 if (type.includes('residen') || type.includes('domest') || type.includes('home')) {
-                    badge = <Badge variant="outline" className="h-3.5 px-1 text-[8px] uppercase tracking-tighter font-black bg-blue-500/10 text-blue-600 border-blue-500/30 whitespace-nowrap">Domestic</Badge>
+                    badge = <StatusBadge status="Domestic" variant="domestic" className="h-4" />
                 } else if (type.includes('commer') || type.includes('shop') || type.includes('office')) {
-                    badge = <Badge variant="outline" className="h-3.5 px-1 text-[8px] uppercase tracking-tighter font-black bg-purple-500/10 text-purple-600 border-purple-500/30 whitespace-nowrap">Commercial</Badge>
+                    badge = <StatusBadge status="Commercial" variant="commercial" className="h-4" />
                 }
 
                 return (
@@ -101,13 +101,13 @@ export default function SurveyStatsView() {
                 const record = row.original
                 return (
                     <div
-                        className="flex flex-col group"
+                        className="flex flex-col group min-w-0 max-w-[120px] sm:max-w-[200px]"
                     >
-                        <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                        <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                             {record.consumer_name || 'Anonymous'}
                         </span>
-                        <span className="badge-subtext bg-muted text-foreground/70 border-border/40 mt-1">
-                            <MapPin size={8} className="text-primary mr-1" />
+                        <span className="badge-subtext mt-1 truncate">
+                            <MapPin size={8} className="text-primary mr-1 shrink-0" />
                             {shortenAreaName(record.uc_name, record.city_district, record.tehsil)}
                         </span>
                     </div>
@@ -119,9 +119,9 @@ export default function SurveyStatsView() {
             header: "Status",
             cell: ({ row }) => {
                 const record = row.original
-                if (record.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 whitespace-nowrap bg-rose-500/20 text-rose-600 border-rose-500/30">Archived</Badge>
-                if (record.is_biller) return <Badge variant="secondary" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 bg-emerald-500/20 text-emerald-600 border-emerald-500/30 shadow-none hover:bg-emerald-500/25 whitespace-nowrap">Active</Badge>
-                return <Badge variant="outline" className="uppercase text-[8px] font-black tracking-widest px-1.5 h-4.5 text-amber-600 border-amber-500/40 bg-amber-500/20 whitespace-nowrap">New Survey</Badge>
+                if (record.status === 'ARCHIVED') return <StatusBadge status="Archived" variant="archived" />
+                if (record.is_biller) return <StatusBadge status="Active" variant="active" />
+                return <StatusBadge status="New Survey" variant="pending" />
             },
         },
         {
@@ -239,7 +239,7 @@ export default function SurveyStatsView() {
                     <h1 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight uppercase truncate leading-none w-full">
                         {filters.uc || filters.tehsil || filters.district || 'Global Operations'}
                     </h1>
-                    <span className={`badge-subtext transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'} bg-primary/20 text-primary border-primary/30 py-0.5`}>
+                    <span className={`badge-subtext transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'} py-0.5`}>
                         {totalCount.toLocaleString()} DATA POINTS
                     </span>
                 </div>

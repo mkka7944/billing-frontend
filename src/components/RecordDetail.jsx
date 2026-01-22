@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shortenAreaName } from '../lib/utils'
-import { CurrencyText } from './common/UIComponents'
+import { CurrencyText, StatusBadge } from './common/UIComponents'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -98,29 +98,25 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
     // Unify Badge Styling with SurveyStatsView
     const renderStatusBadge = () => {
         if (!data) return null
-        if (data.status === 'ARCHIVED') return <Badge variant="destructive" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5">Archived</Badge>
-        if (data.is_biller) return <Badge variant="secondary" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-none">Active</Badge>
-        return <Badge variant="outline" className="uppercase text-[9px] font-black tracking-widest px-1.5 h-5 text-amber-600 border-amber-500/50 bg-amber-500/10">New Survey</Badge>
+        if (data.status === 'ARCHIVED') return <StatusBadge status="Archived" variant="archived" className="h-5" />
+        if (data.is_biller) return <StatusBadge status="Active" variant="active" className="h-5" />
+        return <StatusBadge status="New Survey" variant="pending" className="h-5" />
     }
 
     // Consumer Type Color Coding (Domestic / Commercial Correction)
     const getConsumerTypeBadge = () => {
-        // Try multiple fields as data sources might vary between tables
         const rawType = data?.unit_type || data?.consumer_type || data?.property_type || data?.consumer_category || data?.type || ''
         const type = rawType.toLowerCase()
-        const baseClass = "h-4 px-1.5 text-[9px] uppercase tracking-tighter font-black"
 
-        // Map Domestic / Residential
         if (type.includes('residen') || type.includes('domest') || type.includes('home')) {
-            return <Badge variant="outline" className={`${baseClass} bg-blue-500/10 text-blue-600 border-blue-500/30`}>Domestic</Badge>
+            return <StatusBadge status="Domestic" variant="domestic" className="h-4.5" />
         }
 
-        // Map Commercial / Business
         if (type.includes('commer') || type.includes('shop') || type.includes('office')) {
-            return <Badge variant="outline" className={`${baseClass} bg-purple-500/10 text-purple-600 border-purple-500/30`}>Commercial</Badge>
+            return <StatusBadge status="Commercial" variant="commercial" className="h-4.5" />
         }
 
-        return <Badge variant="outline" className={baseClass}>{rawType || 'General'}</Badge>
+        return <StatusBadge status={rawType || 'General'} variant="default" className="h-4.5" />
     }
 
     return (
@@ -149,7 +145,7 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                         </h2>
                         <div className="h-8 w-px bg-border/50" />
                         <div className="flex flex-col gap-0.5">
-                            <span className="badge-subtext text-primary border-primary/30 bg-primary/10">
+                            <span className="badge-subtext text-primary/80">
                                 {data?.surveyor_name || 'System Auto'}
                             </span>
                             <div className="flex items-center gap-1.5 mt-0.5">
@@ -248,12 +244,12 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
 
                                     {/* Info Overlay */}
                                     <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-white pointer-events-none">
-                                        <div>
-                                            <div className="badge-subtext bg-black/60 text-white border-white/20 mb-1">
+                                        <div className="space-y-1">
+                                            <div className="badge-subtext bg-black/20 backdrop-blur-[2px] text-white/90 px-2 py-0.5 rounded-md border-none">
                                                 Image {activeImage + 1} of {data.image_urls.length}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="badge-subtext bg-primary/90 text-white border-none font-bold">
+                                            <div className="flex">
+                                                <span className="badge-subtext bg-black/20 backdrop-blur-[2px] text-white/90 px-2 py-0.5 rounded-md border-none font-bold">
                                                     <MapPin size={8} className="mr-1 inline" />
                                                     {shortenAreaName(data.uc_name, data.city_district, data.tehsil)}
                                                 </span>
@@ -333,9 +329,11 @@ export default function RecordDetail({ surveyId, onClose, onNext, onPrev, hasNex
                                             <div className={`text-[11px] font-bold tabular-nums ${bill.payment_status === 'PAID' ? 'text-emerald-600' : 'text-foreground'}`}>
                                                 <CurrencyText amount={bill.amount_paid > 0 ? bill.amount_paid : bill.amount_due} />
                                             </div>
-                                            <Badge variant={bill.payment_status === 'PAID' ? 'default' : 'secondary'} className="h-3.5 px-1 text-[8px] uppercase tracking-wider font-bold">
-                                                {bill.payment_status}
-                                            </Badge>
+                                            <StatusBadge
+                                                status={bill.payment_status}
+                                                variant={bill.payment_status === 'PAID' ? 'success' : 'warning'}
+                                                className="h-3.5"
+                                            />
                                         </div>
                                     </div>
                                 )) : (

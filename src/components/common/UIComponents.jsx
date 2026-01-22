@@ -1,22 +1,28 @@
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Check, Copy, ExternalLink, AlertCircle } from 'lucide-react'
 
 /**
  * Enterprise Status Badge
  */
-export const StatusBadge = ({ status, variant = 'default' }) => {
+export const StatusBadge = ({ status, variant = 'default', className = '' }) => {
     const variants = {
         default: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
-        success: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
-        warning: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+        success: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+        active: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/30',
+        warning: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+        pending: 'bg-amber-500/15 text-amber-600 border-amber-500/30 font-black',
         danger: 'bg-red-500/10 text-red-500 border-red-500/20',
+        archived: 'bg-red-500/15 text-red-600 border-red-500/30',
         info: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+        domestic: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+        commercial: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
     }
 
-    const currentVariant = variants[variant] || variants.default
+    const currentVariant = variants[variant.toLowerCase()] || variants.default
 
     return (
-        <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest border ${currentVariant}`}>
+        <span className={cn("status-pill", currentVariant, className)}>
             {status}
         </span>
     )

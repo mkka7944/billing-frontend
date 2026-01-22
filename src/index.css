@@ -117,17 +117,22 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Professional Badge-styled Subtext for High Density Views */
+  /* Professional Clean Subtext (Was boxed badges, now clean typography) */
   .badge-subtext {
-    @apply inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted/60 text-muted-foreground/90 border border-border/20 shadow-sm;
+    @apply inline-flex items-center text-muted-foreground/70;
     font-size: calc(9px * var(--subtext-size));
     font-weight: 800;
-    /* Extra bold for "darker" visual punch */
     line-height: 1;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     -webkit-font-smoothing: subpixel-antialiased;
-    white-space: nowrap;
+  }
+
+  /* Status Pill - For indicators that DO need a background (Active, Pending, etc) */
+  .status-pill {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md font-black uppercase tracking-widest border transition-all duration-200 whitespace-nowrap;
+    font-size: calc(8px * var(--subtext-size));
+    line-height: 1;
   }
 
   .text-detail {
