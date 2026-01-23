@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Geist+Mono:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -38,6 +38,8 @@
     --heading-size: 1;
     --subtext-size: 1;
     --base-size: 1;
+    --font-tracking: normal;
+    --font-leading: 1.6;
 
     /* Extended Gray Tints */
     --gray-50: 0 0% 98%;
@@ -94,10 +96,10 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1, "cv11" 1, "kern" 1;
     font-family: var(--font-sans) !important;
-    letter-spacing: -0.012em;
-    line-height: 1.6;
-    font-weight: 500;
-    /* Heavier default for sharper edges on FHD */
+    letter-spacing: var(--font-tracking);
+    line-height: var(--font-leading);
+    font-weight: 400;
+    /* Corrected to 400 for cleaner density */
     font-optical-sizing: auto;
   }
 

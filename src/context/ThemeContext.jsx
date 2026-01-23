@@ -118,29 +118,37 @@ const ACCENT_COLORS = {
  * FONT_PROFILES: Curated typography stacks.
  */
 const FONT_PROFILES = {
+    jakarta: {
+        name: 'Antigravity Pro (Jakarta)',
+        sans: '"Plus Jakarta Sans", sans-serif',
+        display: '"Plus Jakarta Sans", sans-serif',
+        mono: '"Geist Mono", monospace',
+        tracking: '-0.01em',
+        leading: '1.6'
+    },
     inter: {
         name: 'Modern Sans (Inter)',
         sans: '"Inter", sans-serif',
-        display: '"Inter", sans-serif', // Changed to match sans for uniformity
-        mono: '"JetBrains Mono", monospace'
+        display: '"Inter", sans-serif',
+        mono: '"Geist Mono", monospace',
+        tracking: '-0.012em',
+        leading: '1.55'
     },
     geist: {
         name: 'Geist Technical',
-        sans: '"Geist", sans-serif',
-        display: '"Geist", sans-serif',
-        mono: '"Geist", monospace'
-    },
-    outfit: {
-        name: 'Geometric Pro (Outfit)',
-        sans: '"Outfit", sans-serif',
-        display: '"Outfit", sans-serif',
-        mono: '"JetBrains Mono", monospace'
+        sans: '"Inter", sans-serif', // Fallback sans for Geist Mono focus
+        display: '"Plus Jakarta Sans", sans-serif',
+        mono: '"Geist Mono", monospace',
+        tracking: '0.01em',
+        leading: '1.6'
     },
     mono: {
         name: 'Data Focus (Mono)',
-        sans: '"JetBrains Mono", monospace',
-        display: '"JetBrains Mono", monospace', // Changed to force all-mono look
-        mono: '"JetBrains Mono", monospace'
+        sans: '"Geist Mono", monospace',
+        display: '"Geist Mono", monospace',
+        mono: '"Geist Mono", monospace',
+        tracking: '0.02em',
+        leading: '1.6'
     }
 };
 
@@ -148,7 +156,7 @@ export const ThemeProvider = ({ children }) => {
     const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
     const [surfacePalette, setSurfacePalette] = useState(() => localStorage.getItem('surfacePalette') || 'github');
     const [accentColor, setAccentColor] = useState(() => localStorage.getItem('accentColor') || 'slate_grey');
-    const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'inter');
+    const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('fontFamily') || 'jakarta');
     const [headingSize, setHeadingSize] = useState(() => parseFloat(localStorage.getItem('headingSize') || '1'));
     const [subtextSize, setSubtextSize] = useState(() => parseFloat(localStorage.getItem('subtextSize') || '1'));
     const [baseSize, setBaseSize] = useState(() => parseFloat(localStorage.getItem('baseSize') || '1'));
@@ -195,10 +203,12 @@ export const ThemeProvider = ({ children }) => {
         root.style.setProperty('--primary-foreground', aSet.foreground);
 
         // 3. Typography Variables
-        const fonts = FONT_PROFILES[fontFamily] || FONT_PROFILES.inter;
+        const fonts = FONT_PROFILES[fontFamily] || FONT_PROFILES.jakarta;
         root.style.setProperty('--font-sans', fonts.sans);
         root.style.setProperty('--font-display', fonts.display);
         root.style.setProperty('--font-mono', fonts.mono);
+        root.style.setProperty('--font-tracking', fonts.tracking || 'normal');
+        root.style.setProperty('--font-leading', fonts.leading || '1.5');
 
         // 4. Granular Size Control
         root.style.setProperty('--heading-size', headingSize);
