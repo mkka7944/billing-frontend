@@ -114,13 +114,16 @@ export function AuthProvider({ children }) {
             setProfile(null)
             setPermissions(null)
 
-            // 4. Force hard redirect to entry point to clear any lingering JS closures
-            window.location.href = '/'
+            // 4. Force a clean refresh to the root entry point
+            // We clear the hash to ensure we don't stay on a sub-route (like #/financials) after logout
+            window.location.hash = ''
+            window.location.reload()
         } catch (error) {
             console.error('Logout error:', error)
             // Still clear state locally
             setUser(null)
-            window.location.href = '/'
+            window.location.hash = ''
+            window.location.reload()
         }
     }
 
